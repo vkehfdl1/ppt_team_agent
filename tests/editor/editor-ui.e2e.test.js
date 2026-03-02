@@ -36,6 +36,7 @@ async function writeSlides(workspace) {
 </html>`;
 
   await writeFile(join(slidesDir, 'slide-01.html'), html, 'utf8');
+  await writeFile(join(slidesDir, 'slide-02.html'), html.replace('UI bbox e2e', 'UI bbox e2e slide2'), 'utf8');
 }
 
 async function waitForServerReady(port, child, outputRef) {
@@ -91,6 +92,7 @@ test('supports multi-bbox selection and delete in chat composer flow', async () 
 
     await page.waitForSelector('#draw-layer');
     await page.waitForTimeout(800);
+    assert.equal(await page.locator('#runs-section.collapsed').count(), 1, 'runs should be hidden by default');
 
     const drawLayer = await page.locator('#draw-layer').boundingBox();
     assert.ok(drawLayer, 'draw layer not found');
@@ -175,6 +177,117 @@ test('supports multi-bbox selection and delete in chat composer flow', async () 
     await page.waitForFunction(() => {
       const el = document.querySelector('#bbox-count');
       return el && /0 pending/.test(el.textContent || '');
+    });
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+    server.kill('SIGTERM');
+    await sleep(400);
+    await rm(workspace, { recursive: true, force: true }).catch(() => {});
+  }
+});
+
+test('keeps chat and model state per slide session', async () => {
+  const workspace = await mkdtemp(join(os.tmpdir(), 'editor-ui-session-e2e-'));
+  await writeSlides(workspace);
+
+  const port = 3653;
+  const serverOutput = { value: '' };
+  const serverScriptPath = join(REPO_ROOT, 'scripts', 'editor-server.js');
+  const server = spawn(process.execPath, [serverScriptPath, '--port', String(port)], {
+    cwd: workspace,
+    env: {
+      ...process.env,
+      PPT_AGENT_PACKAGE_ROOT: REPO_ROOT,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  server.stdout.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+  server.stderr.on('data', (chunk) => {
+    serverOutput.value += chunk.toString();
+  });
+
+  let browser;
+  try {
+    await waitForServerReady(port, server, serverOutput);
+
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+    await page.goto(`http://localhost:${port}/`, { waitUntil: 'domcontentloaded' });
+
+    await page.waitForSelector('#draw-layer');
+    await page.waitForTimeout(800);
+
+    const drawLayer = await page.locator('#draw-layer').boundingBox();
+    assert.ok(drawLayer, 'draw layer not found');
+
+    let runNum = 0;
+    await page.route('**/api/apply', async (route) => {
+      runNum += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          runId: `run-session-${runNum}`,
+          code: 0,
+          message: `ok-${runNum}`,
+        }),
+      });
+    });
+
+    // slide-01
+    await page.selectOption('#model-select', 'gpt-5.3-codex-spark');
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.08, drawLayer.y + drawLayer.height * 0.08);
+    await page.mouse.down();
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.40, drawLayer.y + drawLayer.height * 0.24, { steps: 6 });
+    await page.mouse.up();
+    await page.fill('#prompt-input', 'slide-01 prompt');
+    await page.click('#btn-send');
+
+    await page.waitForFunction(() => {
+      const node = document.querySelector('#chat-messages');
+      return node && /slide-01 prompt/.test(node.textContent || '');
+    });
+
+    // slide-02
+    await page.click('#btn-next');
+    await page.waitForFunction(() => {
+      const counter = document.querySelector('#slide-counter');
+      return counter && /2\s*\/\s*2/.test(counter.textContent || '');
+    });
+    await page.selectOption('#model-select', 'gpt-5.3-codex');
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.14, drawLayer.y + drawLayer.height * 0.34);
+    await page.mouse.down();
+    await page.mouse.move(drawLayer.x + drawLayer.width * 0.52, drawLayer.y + drawLayer.height * 0.58, { steps: 6 });
+    await page.mouse.up();
+    await page.fill('#prompt-input', 'slide-02 prompt');
+    await page.click('#btn-send');
+
+    await page.waitForFunction(() => {
+      const node = document.querySelector('#chat-messages');
+      const text = node?.textContent || '';
+      return /slide-02 prompt/.test(text) && !/slide-01 prompt/.test(text);
+    });
+
+    // back to slide-01
+    await page.click('#btn-prev');
+    await page.waitForFunction(() => {
+      const counter = document.querySelector('#slide-counter');
+      return counter && /1\s*\/\s*2/.test(counter.textContent || '');
+    });
+
+    const restoredModel = await page.$eval('#model-select', (el) => el.value);
+    assert.equal(restoredModel, 'gpt-5.3-codex-spark');
+
+    await page.waitForFunction(() => {
+      const node = document.querySelector('#chat-messages');
+      const text = node?.textContent || '';
+      return /slide-01 prompt/.test(text) && !/slide-02 prompt/.test(text);
     });
   } finally {
     if (browser) {

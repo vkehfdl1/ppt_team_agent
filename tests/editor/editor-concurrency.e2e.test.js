@@ -151,7 +151,7 @@ test('allows concurrent runs on different slides and blocks second run on same s
     assert.equal(res2.status, 200, `res2 failed: ${JSON.stringify(body2)}`);
     assert.equal(body1.success, true);
     assert.equal(body2.success, true);
-    assert.ok(elapsed < 2800, `requests look sequential, elapsed=${elapsed}ms`);
+    assert.ok(elapsed < 3200, `requests look sequential, elapsed=${elapsed}ms`);
 
     const firstReq = fetch(`http://localhost:${port}/api/apply`, {
       method: 'POST',

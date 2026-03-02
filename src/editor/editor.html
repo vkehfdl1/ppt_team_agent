@@ -6,15 +6,35 @@
   <title>Slide Editor - ppt-agent</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
+    :root {
+      --bg-0: #0d1117;
+      --bg-1: #121820;
+      --panel: #161b22;
+      --panel-2: #0f141a;
+      --border: #2a3038;
+      --border-soft: #20262e;
+      --text-0: #e6edf3;
+      --text-1: #9aa4b2;
+      --text-2: #6f7a88;
+      --accent: #3b82f6;
+      --accent-2: #60a5fa;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body {
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #111;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #fff;
+      background: radial-gradient(1400px 900px at 0% -20%, #18212d 0%, #0d1117 50%, #0b0f14 100%);
+      font-family: var(--sans);
+      color: var(--text-0);
+      letter-spacing: 0.01em;
     }
 
     .editor-container {
@@ -26,50 +46,52 @@
 
     .nav-bar {
       height: 48px;
-      background: #1a1a1a;
-      border-bottom: 1px solid #333;
+      background: #0f141a;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 16px;
+      padding: 0 12px;
       flex-shrink: 0;
       z-index: 100;
+      gap: 10px;
     }
 
     .nav-controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
 
     .nav-bar button {
-      background: #333;
-      color: #fff;
-      border: none;
+      background: #202a36;
+      color: var(--text-0);
+      border: 1px solid #2b3643;
       border-radius: 6px;
-      padding: 6px 16px;
-      font-size: 13px;
+      padding: 6px 12px;
+      font-size: 12px;
       font-family: inherit;
       cursor: pointer;
       transition: background 0.15s;
     }
 
-    .nav-bar button:hover { background: #555; }
+    .nav-bar button:hover { background: #2a3646; }
     .nav-bar button:disabled { opacity: 0.3; cursor: default; }
-    .nav-bar button:disabled:hover { background: #333; }
+    .nav-bar button:disabled:hover { background: #202a36; }
 
     .slide-counter {
-      color: #aaa;
-      font-size: 14px;
-      font-weight: 500;
-      min-width: 60px;
+      color: #b6c2cf;
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 84px;
       text-align: center;
+      font-family: var(--mono);
     }
 
     .nav-spacer { flex: 1; }
 
     .slide-status-chip {
       margin-right: 12px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       letter-spacing: 0.3px;
       padding: 4px 8px;
@@ -79,34 +101,35 @@
     }
 
     .slide-status-chip.idle {
-      color: #a3a3a3;
-      background: #232323;
-      border-color: #2f2f2f;
+      color: #8b97a6;
+      background: #1a212c;
+      border-color: #2a313c;
     }
 
     .slide-status-chip.running {
-      color: #facc15;
-      background: #352b10;
-      border-color: #5a4718;
+      color: #fbbf24;
+      background: #2f2512;
+      border-color: #4f3d1d;
     }
 
     .slide-status-chip.success {
-      color: #22c55e;
-      background: #122c1c;
-      border-color: #1d4630;
+      color: #4ade80;
+      background: #12251a;
+      border-color: #204432;
     }
 
     .slide-status-chip.failed {
-      color: #ef4444;
-      background: #361516;
-      border-color: #5a2325;
+      color: #f87171;
+      background: #321517;
+      border-color: #552125;
     }
 
     .brand {
-      color: #555;
-      font-size: 13px;
+      color: var(--text-2);
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.08em;
+      font-family: var(--mono);
     }
 
     .main-content {
@@ -124,7 +147,7 @@
       padding: 24px;
       min-width: 0;
       overflow: hidden;
-      background: #111;
+      background: linear-gradient(180deg, #0f141b 0%, #0d1218 100%);
     }
 
     .slide-wrapper {
@@ -137,7 +160,7 @@
     .slide-wrapper iframe {
       width: 960px;
       height: 540px;
-      border: 1px solid #333;
+      border: 1px solid var(--border);
       border-radius: 4px;
       background: #fff;
       display: block;
@@ -281,19 +304,19 @@
       top: 10px;
       right: 10px;
       z-index: 12;
-      border: 1px solid #4b5563;
-      background: rgba(17, 24, 39, 0.88);
-      color: #f3f4f6;
+      border: 1px solid #2f3946;
+      background: rgba(16, 22, 30, 0.88);
+      color: #dbe5f0;
       border-radius: 6px;
       padding: 6px 10px;
       font-size: 12px;
-      font-family: inherit;
+      font-family: var(--mono);
       cursor: pointer;
       transition: background 0.15s;
     }
 
     .clear-overlay-btn:hover {
-      background: rgba(31, 41, 55, 0.95);
+      background: rgba(26, 35, 47, 0.95);
     }
 
     .clear-overlay-btn:disabled {
@@ -302,14 +325,14 @@
     }
 
     .clear-overlay-btn:disabled:hover {
-      background: rgba(17, 24, 39, 0.88);
+      background: rgba(16, 22, 30, 0.88);
     }
 
     .sidebar {
       width: 430px;
       min-width: 340px;
-      border-left: 1px solid #333;
-      background: #1a1a1a;
+      border-left: 1px solid var(--border);
+      background: linear-gradient(180deg, #11161d 0%, #0d1218 100%);
       display: flex;
       flex-direction: column;
       min-height: 0;
@@ -323,81 +346,165 @@
     }
 
     .chat-header {
-      height: 44px;
+      height: 42px;
       display: flex;
       align-items: center;
-      padding: 0 14px;
-      border-bottom: 1px solid #333;
-      font-size: 13px;
-      font-weight: 600;
-      color: #d1d5db;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      background: #0f141a;
+    }
+
+    .header-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .header-tab {
+      color: var(--text-2);
+      position: relative;
+      padding: 2px 0;
+    }
+
+    .header-tab.active {
+      color: var(--text-0);
+    }
+
+    .header-tab.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -11px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+
+    .btn-toggle-logs {
+      background: #1b2430;
+      color: #c8d3df;
+      border: 1px solid #2e3948;
+      border-radius: 6px;
+      height: 26px;
+      padding: 0 8px;
+      font-size: 11px;
+      font-family: var(--mono);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-toggle-logs:hover {
+      background: #253142;
+    }
+
+    .btn-toggle-logs.active {
+      border-color: #3d5168;
+      color: #e6edf3;
+      background: #233144;
+    }
+
+    .session-strip {
+      border-bottom: 1px solid var(--border-soft);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+      background: #11161d;
+      overflow-x: auto;
+    }
+
+    .session-file-chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid #2f3b4a;
+      background: #1a2432;
+      color: #d6e1ec;
+      padding: 0 8px;
+      font-size: 11px;
+      font-family: var(--mono);
+      max-width: 190px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .chat-messages {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
-      padding: 12px;
+      padding: 12px 10px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      background: #151515;
+      gap: 10px;
+      background: #0f141a;
     }
 
     .chat-messages:empty::before {
       content: 'Prompt history appears here.';
-      color: #666;
+      color: var(--text-2);
       font-size: 12px;
       font-style: italic;
     }
 
     .message {
-      border: 1px solid #2f2f2f;
-      border-radius: 8px;
-      padding: 8px 10px;
+      border: 1px solid #242c36;
+      border-radius: 10px;
+      padding: 10px;
       font-size: 12px;
       line-height: 1.5;
-      color: #d1d5db;
+      color: #d5dee8;
       white-space: pre-wrap;
+      background: #141a22;
     }
 
     .message.user {
-      border-color: #1d4ed8;
-      background: rgba(37, 99, 235, 0.13);
+      border-color: #2b4670;
+      background: #152033;
     }
 
     .message.system {
-      border-color: #355a37;
-      background: rgba(22, 163, 74, 0.12);
+      border-color: #2e4f39;
+      background: #14231a;
     }
 
     .message.error {
-      border-color: #7f1d1d;
-      background: rgba(239, 68, 68, 0.12);
+      border-color: #5a2229;
+      background: #2a171b;
     }
 
     .composer {
-      border-top: 1px solid #333;
-      padding: 10px;
+      border-top: 1px solid var(--border);
+      padding: 10px 10px 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      background: #1a1a1a;
+      background: #11161d;
     }
 
     .tool-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 10px;
+      flex-wrap: nowrap;
+      min-height: 28px;
     }
 
     .btn {
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 7px 10px;
       font-size: 12px;
-      font-family: inherit;
+      font-family: var(--sans);
       cursor: pointer;
       transition: background 0.15s;
       display: inline-flex;
@@ -416,10 +523,71 @@
     }
 
     .bbox-count {
-      color: #9ca3af;
-      font-size: 12px;
-      font-weight: 600;
+      color: var(--text-2);
+      font-size: 11px;
+      font-weight: 700;
       margin-left: auto;
+      font-family: var(--mono);
+    }
+
+    .context-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .context-chip {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 22px;
+      border-radius: 6px;
+      border: 1px solid #2e3948;
+      background: #18212c;
+      color: #cdd7e1;
+      padding: 0 8px;
+      font-size: 11px;
+      font-family: var(--mono);
+      cursor: pointer;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .context-chip.file {
+      border-color: #314055;
+      background: #1a2636;
+      color: #deebfa;
+      cursor: default;
+    }
+
+    .context-chip.pending {
+      border-color: #5a252b;
+      background: #2e171b;
+      color: #fecaca;
+    }
+
+    .context-chip.review {
+      border-color: #234334;
+      background: #13281e;
+      color: #bbf7d0;
+    }
+
+    .context-chip.selected {
+      outline: 1px solid var(--accent-2);
+      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.35);
+    }
+
+    .context-chip-empty {
+      color: var(--text-2);
+      font-size: 11px;
+      font-family: var(--mono);
     }
 
     .prompt-input {
@@ -427,87 +595,89 @@
       min-height: 84px;
       max-height: 200px;
       resize: vertical;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #222;
-      color: #e5e7eb;
+      border-radius: 8px;
+      border: 1px solid #2e3948;
+      background: #0f141a;
+      color: #e6edf3;
       font-size: 13px;
-      font-family: inherit;
+      font-family: var(--sans);
       line-height: 1.45;
       padding: 10px;
+      padding-bottom: 50px;
       outline: none;
     }
 
     .prompt-input:focus {
-      border-color: #666;
+      border-color: #3c4e63;
     }
 
     .prompt-input::placeholder {
-      color: #666;
-    }
-
-    .composer-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 10px;
-      flex-wrap: wrap;
+      color: #627183;
     }
 
     .hint {
-      color: #6b7280;
+      color: var(--text-2);
       font-size: 11px;
+      font-family: var(--mono);
     }
 
-    .model-control {
+    .prompt-shell {
+      position: relative;
+      width: 100%;
+    }
+
+    .prompt-toolbar {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      flex: 1 1 auto;
-      min-width: 0;
-      max-width: 100%;
-      overflow: hidden;
-    }
-
-    .model-label {
-      color: #9ca3af;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
     }
 
     .model-select {
-      flex: 1 1 180px;
-      min-width: 120px;
-      width: auto;
-      height: 30px;
-      border-radius: 6px;
-      border: 1px solid #3f3f46;
-      background: #202020;
-      color: #e5e7eb;
+      min-width: 176px;
+      width: 176px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid #2f3b4a;
+      background: #111722;
+      color: #e6edf3;
       font-size: 12px;
-      font-family: inherit;
+      font-family: var(--mono);
       padding: 0 8px;
       outline: none;
     }
 
     .model-select:focus {
-      border-color: #64748b;
+      border-color: #4f6d8f;
     }
 
     .btn-send {
-      background: #2563eb;
-      color: #fff;
-      min-width: 108px;
-      flex: 0 0 auto;
+      background: linear-gradient(180deg, #2754a7 0%, #1d3f84 100%);
+      color: #dce7f6;
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 1px solid #304f85;
+      border-radius: 9px;
     }
 
-    .btn-send:hover { background: #3b82f6; }
+    .btn-send:hover { background: linear-gradient(180deg, #2d63c8 0%, #224a99 100%); }
+
+    .btn-send-icon {
+      width: 14px;
+      height: 14px;
+      display: block;
+      fill: currentColor;
+      transform: translateX(0.5px);
+    }
 
     .runs-section {
-      border-top: 1px solid #333;
+      border-top: 1px solid var(--border);
       padding: 10px;
-      background: #141414;
+      background: #0f141a;
       max-height: 36%;
       min-height: 130px;
       display: flex;
@@ -515,12 +685,17 @@
       gap: 8px;
     }
 
+    .runs-section.collapsed {
+      display: none;
+    }
+
     .section-label {
-      color: #9ca3af;
+      color: var(--text-1);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.5px;
       text-transform: uppercase;
+      font-family: var(--mono);
     }
 
     .runs-list {
@@ -532,10 +707,10 @@
     }
 
     .run-item {
-      border: 1px solid #2f2f2f;
+      border: 1px solid #2a3340;
       border-radius: 8px;
       padding: 8px;
-      background: #1c1c1c;
+      background: #121923;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -546,7 +721,8 @@
       align-items: center;
       gap: 6px;
       font-size: 11px;
-      color: #d1d5db;
+      color: var(--text-0);
+      font-family: var(--mono);
     }
 
     .run-dot {
@@ -562,14 +738,15 @@
     .run-dot.idle { background: #6b7280; }
 
     .run-slide {
-      color: #e5e7eb;
+      color: #dce6f2;
       font-weight: 600;
       word-break: break-all;
     }
 
     .run-meta {
-      color: #9ca3af;
+      color: var(--text-1);
       font-size: 11px;
+      font-family: var(--mono);
     }
 
     .run-actions {
@@ -580,38 +757,43 @@
     }
 
     .btn-log {
-      background: #333;
-      color: #fff;
+      background: #1e2733;
+      color: #cfd9e5;
       font-size: 11px;
       padding: 5px 8px;
+      border: 1px solid #2d3948;
+      border-radius: 6px;
+      font-family: var(--mono);
     }
 
-    .btn-log:hover { background: #454545; }
+    .btn-log:hover { background: #2a3646; }
 
     .run-log {
       white-space: pre-wrap;
-      background: #101010;
-      border: 1px solid #2a2a2a;
+      background: #0d131b;
+      border: 1px solid #263240;
       border-radius: 6px;
       padding: 8px;
       font-size: 11px;
       line-height: 1.45;
-      color: #d1d5db;
+      color: #d6e1ec;
       max-height: 180px;
       overflow: auto;
+      font-family: var(--mono);
     }
 
     .status-bar {
       height: 28px;
-      background: #1a1a1a;
-      border-top: 1px solid #333;
+      background: #0f141a;
+      border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
       padding: 0 12px;
       font-size: 11px;
-      color: #555;
+      color: var(--text-2);
       flex-shrink: 0;
       gap: 16px;
+      font-family: var(--mono);
     }
 
     .status-dot {
@@ -629,10 +811,32 @@
     .status-message {
       flex: 1;
       text-align: right;
-      color: #666;
+      color: var(--text-2);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    @media (max-width: 1380px) {
+      .sidebar {
+        width: 390px;
+        min-width: 300px;
+      }
+      .tool-row {
+        flex-wrap: wrap;
+      }
+      .prompt-toolbar {
+        position: static;
+        margin-top: 8px;
+      }
+      .model-select {
+        min-width: 138px;
+        width: 138px;
+      }
+      .prompt-input {
+        min-height: 78px;
+        padding-bottom: 10px;
+      }
     }
   </style>
 </head>
@@ -663,30 +867,41 @@
 
       <aside class="sidebar">
         <section class="chat-section">
-          <div class="chat-header">Slide Chat</div>
+          <div class="chat-header">
+            <div class="header-tabs">
+              <span class="header-tab active">CHAT</span>
+            </div>
+            <button class="btn-toggle-logs" id="btn-toggle-logs" title="Toggle execution records">LOGS</button>
+          </div>
+          <div class="session-strip">
+            <span class="session-file-chip" id="session-file-chip">--</span>
+          </div>
           <div class="chat-messages" id="chat-messages"></div>
 
           <div class="composer">
             <div class="tool-row">
-              <span class="hint">Drag on the slide to add red pending bboxes.</span>
+              <div class="context-chips" id="context-chip-list"></div>
               <span class="bbox-count" id="bbox-count">0 pending · 0 review</span>
             </div>
-            <textarea id="prompt-input" class="prompt-input" placeholder="Describe the edit for this slide..."></textarea>
-            <div class="composer-actions">
-              <div class="model-control">
-                <span class="hint">Cmd/Ctrl+Enter to run</span>
-                <label class="model-label" for="model-select">Model</label>
+            <div class="hint">Drag on the slide to add red pending bboxes. Cmd/Ctrl+Enter to run.</div>
+            <div class="prompt-shell">
+              <textarea id="prompt-input" class="prompt-input" placeholder="Describe the edit for this slide..."></textarea>
+              <div class="prompt-toolbar">
                 <select id="model-select" class="model-select">
                   <option value="gpt-5.3-codex">gpt-5.3-codex</option>
                   <option value="gpt-5.3-codex-spark">gpt-5.3-codex-spark</option>
                 </select>
+                <button class="btn btn-send" id="btn-send" title="Run Codex" aria-label="Run Codex">
+                  <svg class="btn-send-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.4 11.2 19.6 4.4c.8-.3 1.7.5 1.4 1.4l-6.8 16.2c-.3.8-1.4.9-1.9.1L9.2 16l-6.1-3.1c-.8-.5-.7-1.6.3-1.7Zm5.1 3.6 3.2 1.6 4.9-11.7-11.7 4.9 3.6 1.8 6.2-3.7c.4-.2.8.1.6.6l-6.8 6.5Z"/>
+                  </svg>
+                </button>
               </div>
-              <button class="btn btn-send" id="btn-send">Run Codex</button>
             </div>
           </div>
         </section>
 
-        <section class="runs-section">
+        <section class="runs-section collapsed" id="runs-section">
           <div class="section-label">Execution Records</div>
           <div class="runs-list" id="runs-list"></div>
         </section>
@@ -710,6 +925,7 @@
     let currentIndex = 0;
     let drawStart = null;
     let drawing = false;
+    let logsVisible = false;
 
     const slideStates = new Map();
     const activeRunBySlide = new Map();
@@ -719,13 +935,12 @@
     const runLogsById = new Map();
     let expandedRunId = null;
 
-    const chatMessages = [];
-
     const SLIDE_W = 960;
     const SLIDE_H = 540;
     const DEFAULT_MODELS = ['gpt-5.3-codex', 'gpt-5.3-codex-spark'];
     let availableModels = DEFAULT_MODELS.slice();
-    let selectedModel = DEFAULT_MODELS[0];
+    let defaultModel = DEFAULT_MODELS[0];
+    let selectedModel = defaultModel;
 
     // -------------------------------------------------------------------------
     // DOM refs
@@ -744,12 +959,16 @@
     const drawBox = $('#draw-box');
 
     const chatMessagesEl = $('#chat-messages');
+    const sessionFileChip = $('#session-file-chip');
+    const contextChipList = $('#context-chip-list');
     const promptInput = $('#prompt-input');
     const modelSelect = $('#model-select');
     const btnClearBboxes = $('#btn-clear-bboxes');
     const bboxCountEl = $('#bbox-count');
     const btnSend = $('#btn-send');
+    const btnToggleLogs = $('#btn-toggle-logs');
 
+    const runsSection = $('#runs-section');
     const runsListEl = $('#runs-list');
 
     const statusDot = $('#status-dot');
@@ -832,6 +1051,8 @@
         selectedModel = availableModels[0];
       }
 
+      defaultModel = selectedModel;
+
       modelSelect.innerHTML = availableModels
         .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
         .join('');
@@ -866,6 +1087,8 @@
       if (!slideStates.has(slide)) {
         slideStates.set(slide, {
           prompt: '',
+          model: defaultModel,
+          messages: [],
           boxes: [],
           selectedBoxId: null,
         });
@@ -883,28 +1106,41 @@
     // -------------------------------------------------------------------------
     // Chat / Runs UI
     // -------------------------------------------------------------------------
-    function addChatMessage(kind, text) {
-      chatMessages.push({
+    function addChatMessage(kind, text, slide = currentSlideFile()) {
+      if (!slide) return;
+
+      const state = getSlideState(slide);
+      state.messages.push({
         id: randomId('msg'),
         kind,
         text,
         at: new Date().toISOString(),
       });
 
-      while (chatMessages.length > 80) {
-        chatMessages.shift();
+      while (state.messages.length > 80) {
+        state.messages.shift();
       }
 
-      renderChatMessages();
+      if (slide === currentSlideFile()) {
+        renderChatMessages();
+      }
     }
 
     function renderChatMessages() {
-      if (chatMessages.length === 0) {
+      const slide = currentSlideFile();
+      if (!slide) {
         chatMessagesEl.innerHTML = '';
         return;
       }
 
-      chatMessagesEl.innerHTML = chatMessages
+      const state = getSlideState(slide);
+      const messages = Array.isArray(state.messages) ? state.messages : [];
+      if (messages.length === 0) {
+        chatMessagesEl.innerHTML = '';
+        return;
+      }
+
+      chatMessagesEl.innerHTML = messages
         .map((msg) => {
           const time = formatTime(msg.at);
           return [
@@ -917,6 +1153,13 @@
         .join('');
 
       chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    function setLogsVisible(visible) {
+      logsVisible = Boolean(visible);
+      runsSection.classList.toggle('collapsed', !logsVisible);
+      btnToggleLogs.classList.toggle('active', logsVisible);
+      btnToggleLogs.textContent = logsVisible ? 'LOGS ON' : 'LOGS';
     }
 
     async function toggleRunLog(runId) {
@@ -1007,6 +1250,7 @@
       if (!slide) {
         bboxLayer.innerHTML = '';
         bboxCountEl.textContent = '0 pending · 0 review';
+        renderContextChips();
         return;
       }
 
@@ -1031,7 +1275,37 @@
       const pendingCount = state.boxes.filter((box) => normalizeBoxStatus(box.status) === 'pending').length;
       const reviewCount = state.boxes.length - pendingCount;
       bboxCountEl.textContent = `${pendingCount} pending · ${reviewCount} review`;
+      renderContextChips();
       updateSendState();
+    }
+
+    function renderContextChips() {
+      const slide = currentSlideFile();
+      if (!slide) {
+        contextChipList.innerHTML = '';
+        sessionFileChip.textContent = '--';
+        return;
+      }
+
+      sessionFileChip.textContent = slide;
+
+      const state = getSlideState(slide);
+      if (!Array.isArray(state.boxes) || state.boxes.length === 0) {
+        contextChipList.innerHTML = '<span class="context-chip-empty">No bbox selected</span>';
+        return;
+      }
+
+      contextChipList.innerHTML = state.boxes
+        .map((box, index) => {
+          const statusClass = normalizeBoxStatus(box.status);
+          const selectedClass = box.id === state.selectedBoxId ? 'selected' : '';
+          return [
+            `<button class="context-chip ${statusClass} ${selectedClass}" data-chip-box-id="${escapeHtml(box.id)}" title="Focus bbox #${index + 1}">`,
+            `#${index + 1}`,
+            '</button>',
+          ].join('');
+        })
+        .join('');
     }
 
     function clientToSlidePoint(clientX, clientY) {
@@ -1168,6 +1442,23 @@
       renderBboxes();
     });
 
+    contextChipList.addEventListener('click', (event) => {
+      const chip = event.target.closest('[data-chip-box-id]');
+      if (!chip) return;
+
+      const slide = currentSlideFile();
+      if (!slide) return;
+
+      const boxId = chip.getAttribute('data-chip-box-id');
+      const state = getSlideState(slide);
+      const boxExists = state.boxes.some((box) => box.id === boxId);
+      if (!boxExists) return;
+
+      state.selectedBoxId = boxId;
+      renderBboxes();
+      setStatus(`Selected ${slide} region.`);
+    });
+
     // -------------------------------------------------------------------------
     // XPath extraction
     // -------------------------------------------------------------------------
@@ -1289,8 +1580,9 @@
       const prompt = (promptInput.value || '').trim();
       const pendingCount = state.boxes.filter((box) => normalizeBoxStatus(box.status) === 'pending').length;
       const blocked = pendingRequestBySlide.has(slide) || activeRunBySlide.has(slide);
+      const model = normalizeModelName(state.model);
 
-      btnSend.disabled = !prompt || pendingCount === 0 || blocked || !selectedModel;
+      btnSend.disabled = !prompt || pendingCount === 0 || blocked || !model;
       btnClearBboxes.disabled = state.boxes.length === 0 || blocked;
       updateSlideStatusChip();
     }
@@ -1302,6 +1594,7 @@
       const state = getSlideState(slide);
       const prompt = (promptInput.value || '').trim();
       const pendingBoxes = state.boxes.filter((box) => normalizeBoxStatus(box.status) === 'pending');
+      const model = normalizeModelName(state.model) || selectedModel || defaultModel;
 
       if (!prompt) return;
       if (pendingBoxes.length === 0) {
@@ -1320,7 +1613,7 @@
         targets: extractTargetsForBox(box),
       }));
 
-      addChatMessage('user', `[${slide}] [${selectedModel}] ${prompt}`);
+      addChatMessage('user', `[${slide}] [${model}] ${prompt}`, slide);
 
       pendingRequestBySlide.add(slide);
       state.prompt = '';
@@ -1335,7 +1628,7 @@
           body: JSON.stringify({
             slide,
             prompt,
-            model: selectedModel,
+            model,
             selections,
           }),
         });
@@ -1344,7 +1637,7 @@
 
         if (!res.ok) {
           const message = data.error || `Server error ${res.status}`;
-          addChatMessage('error', `[${slide}] ${message}`);
+          addChatMessage('error', `[${slide}] ${message}`, slide);
           setStatus(`Error: ${message}`);
           return;
         }
@@ -1358,7 +1651,7 @@
             status: data.success ? 'success' : 'failed',
             code: data.code,
             message: data.message,
-            model: data.model || selectedModel,
+            model: data.model || model,
             startedAt: existing.startedAt || new Date().toISOString(),
             finishedAt: new Date().toISOString(),
             logPreview: existing.logPreview || '',
@@ -1369,6 +1662,7 @@
         addChatMessage(
           data.success ? 'system' : 'error',
           `[${slide}] ${data.message || (data.success ? 'Completed' : 'Failed')}`,
+          slide,
         );
 
         if (data.success) {
@@ -1389,7 +1683,7 @@
           setStatus(data.message || 'Codex run failed.');
         }
       } catch (error) {
-        addChatMessage('error', `[${slide}] ${error.message}`);
+        addChatMessage('error', `[${slide}] ${error.message}`, slide);
         setStatus(`Error: ${error.message}`);
       } finally {
         pendingRequestBySlide.delete(slide);
@@ -1405,6 +1699,7 @@
       if (!slide) return;
       const state = getSlideState(slide);
       state.prompt = promptInput.value;
+      state.model = normalizeModelName(modelSelect.value) || state.model || defaultModel;
     }
 
     function goToSlide(index) {
@@ -1415,12 +1710,19 @@
       currentIndex = index;
       const slide = currentSlideFile();
       slideIframe.src = `/slides/${slide}`;
+      sessionFileChip.textContent = slide;
       slideCounter.textContent = `${currentIndex + 1} / ${slides.length}`;
       btnPrev.disabled = currentIndex === 0;
       btnNext.disabled = currentIndex === slides.length - 1;
 
       const state = getSlideState(slide);
+      if (!availableModels.includes(normalizeModelName(state.model))) {
+        state.model = defaultModel;
+      }
+      selectedModel = state.model;
+      modelSelect.value = selectedModel;
       promptInput.value = state.prompt || '';
+      renderChatMessages();
       renderBboxes();
       updateSendState();
       setStatus(`Loaded ${slide}`);
@@ -1486,7 +1788,7 @@
             logPreview: '',
           });
 
-          addChatMessage('system', `[${payload.slide}] run started (${payload.runId})`);
+          addChatMessage('system', `[${payload.slide}] run started (${payload.runId})`, payload.slide);
           renderRunsList();
           updateSendState();
         } catch (error) {
@@ -1535,6 +1837,7 @@
           addChatMessage(
             payload.success ? 'system' : 'error',
             `[${payload.slide}] ${payload.message || (payload.success ? 'completed' : 'failed')}`,
+            payload.slide,
           );
 
           renderRunsList();
@@ -1603,6 +1906,10 @@
 
     btnSend.addEventListener('click', applyChanges);
 
+    btnToggleLogs.addEventListener('click', () => {
+      setLogsVisible(!logsVisible);
+    });
+
     modelSelect.addEventListener('change', () => {
       const nextModel = normalizeModelName(modelSelect.value);
       if (!availableModels.includes(nextModel)) {
@@ -1610,7 +1917,13 @@
         return;
       }
 
+      const slide = currentSlideFile();
+      if (slide) {
+        const state = getSlideState(slide);
+        state.model = nextModel;
+      }
       selectedModel = nextModel;
+      defaultModel = nextModel;
       saveSelectedModel(selectedModel);
       updateSendState();
       setStatus(`Model selected: ${selectedModel}`);
@@ -1660,6 +1973,7 @@
     // -------------------------------------------------------------------------
     async function init() {
       setStatus('Loading slide list...');
+      setLogsVisible(false);
 
       try {
         const res = await fetch('/api/slides');
