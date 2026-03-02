@@ -46,17 +46,21 @@ test('buildCodexEditPrompt includes user prompt, bbox, and XPath targets', () =>
   const prompt = buildCodexEditPrompt({
     slideFile: 'slide-01.html',
     userPrompt: 'Make this title larger and move it left.',
-    selection: { x: 100, y: 40, width: 300, height: 120 },
-    targets: [
+    selections: [
       {
-        xpath: '/html/body/div[1]/h1[1]',
-        tag: 'h1',
-        text: 'Q1 Revenue',
-      },
-      {
-        xpath: '/html/body/div[1]/p[2]',
-        tag: 'p',
-        text: 'Source: Internal',
+        bbox: { x: 100, y: 40, width: 300, height: 120 },
+        targets: [
+          {
+            xpath: '/html/body/div[1]/h1[1]',
+            tag: 'h1',
+            text: 'Q1 Revenue',
+          },
+          {
+            xpath: '/html/body/div[1]/p[2]',
+            tag: 'p',
+            text: 'Source: Internal',
+          },
+        ],
       },
     ],
   });
@@ -66,6 +70,7 @@ test('buildCodexEditPrompt includes user prompt, bbox, and XPath targets', () =>
   assert.match(prompt, /x=100, y=40, width=300, height=120/);
   assert.match(prompt, /\/html\/body\/div\[1\]\/h1\[1\]/);
   assert.match(prompt, /Q1 Revenue/);
+  assert.match(prompt, /Region 1/);
 });
 
 test('buildCodexExecArgs attaches image and prompt to codex exec', () => {

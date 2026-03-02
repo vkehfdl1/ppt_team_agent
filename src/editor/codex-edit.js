@@ -59,7 +59,25 @@ export function scaleSelectionToScreenshot(selection, sourceSize, targetSize) {
   };
 }
 
-export function buildCodexEditPrompt({ slideFile, userPrompt, selection, targets = [] }) {
+function formatTargets(targets) {
+  if (!Array.isArray(targets) || targets.length === 0) {
+    return ['  - (No XPath targets were detected for this region.)'];
+  }
+
+  return targets.slice(0, 12).flatMap((target, index) => {
+    const text = typeof target.text === 'string' && target.text.trim() !== ''
+      ? target.text.trim().replace(/\s+/g, ' ').slice(0, 140)
+      : '(no text)';
+    return [
+      `  - Target ${index + 1}`,
+      `    - XPath: ${target.xpath}`,
+      `    - Tag: ${target.tag || 'unknown'}`,
+      `    - Text: ${text}`,
+    ];
+  });
+}
+
+export function buildCodexEditPrompt({ slideFile, userPrompt, selections = [] }) {
   const sanitizedPrompt = typeof userPrompt === 'string' ? userPrompt.trim() : '';
   if (!sanitizedPrompt) {
     throw new Error('Prompt must be a non-empty string.');
@@ -69,21 +87,20 @@ export function buildCodexEditPrompt({ slideFile, userPrompt, selection, targets
     throw new Error('Slide file is required.');
   }
 
-  const selectionLine = `x=${selection.x}, y=${selection.y}, width=${selection.width}, height=${selection.height}`;
-  const targetLines =
-    targets.length === 0
-      ? ['- (No XPath targets were detected. Use the highlighted region and visible content.)']
-      : targets.map((target, index) => {
-        const text = typeof target.text === 'string' && target.text.trim() !== ''
-          ? target.text.trim().replace(/\s+/g, ' ').slice(0, 140)
-          : '(no text)';
-        return [
-          `- Target ${index + 1}`,
-          `  - XPath: ${target.xpath}`,
-          `  - Tag: ${target.tag || 'unknown'}`,
-          `  - Text: ${text}`,
-        ].join('\n');
-      });
+  if (!Array.isArray(selections) || selections.length === 0) {
+    throw new Error('At least one selection is required.');
+  }
+
+  const selectionLines = selections.flatMap((selection, index) => {
+    const bbox = selection.bbox ?? selection;
+    return [
+      `Region ${index + 1}`,
+      `- Bounding box: x=${bbox.x}, y=${bbox.y}, width=${bbox.width}, height=${bbox.height}`,
+      '- XPath targets:',
+      ...formatTargets(selection.targets),
+      '',
+    ];
+  });
 
   return [
     `Edit slides/${slideFile} only.`,
@@ -91,12 +108,8 @@ export function buildCodexEditPrompt({ slideFile, userPrompt, selection, targets
     'User edit request:',
     sanitizedPrompt,
     '',
-    'Selected region on slide (960x540 coordinate space):',
-    selectionLine,
-    '',
-    'Detected XPath targets intersecting the selected region:',
-    ...targetLines,
-    '',
+    'Selected regions on slide (960x540 coordinate space):',
+    ...selectionLines,
     'Rules:',
     '- Modify only the requested slide file.',
     '- Keep existing structure/content unless the request requires a change.',
@@ -127,18 +140,28 @@ export function buildCodexExecArgs({ prompt, imagePath, model }) {
 }
 
 function buildAnnotationSvg(width, height, bbox) {
-  const x = bbox.x;
-  const y = bbox.y;
-  const w = bbox.width;
-  const h = bbox.height;
+  const boxes = Array.isArray(bbox) ? bbox : [bbox];
+
+  const overlayItems = boxes.flatMap((item, index) => {
+    const x = item.x;
+    const y = item.y;
+    const w = item.width;
+    const h = item.height;
+    const labelY = Math.max(18, y - 6);
+    return [
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(239,68,68,0.12)"/>`,
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#EF4444" stroke-width="4" filter="url(#shadow)"/>`,
+      `<rect x="${x}" y="${Math.max(0, labelY - 16)}" width="22" height="18" fill="#EF4444"/>`,
+      `<text x="${x + 11}" y="${labelY - 3}" text-anchor="middle" font-size="12" font-family="Arial, sans-serif" fill="#FFFFFF">${index + 1}</text>`,
+    ];
+  });
 
   return [
     `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`,
     '<defs>',
     '<filter id="shadow"><feDropShadow dx="0" dy="0" stdDeviation="2" flood-opacity="0.8"/></filter>',
     '</defs>',
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(239,68,68,0.18)"/>`,
-    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#EF4444" stroke-width="4" filter="url(#shadow)"/>`,
+    ...overlayItems,
     '</svg>',
   ].join('');
 }

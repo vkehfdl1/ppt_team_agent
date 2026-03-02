@@ -5,14 +5,22 @@ import { chromium } from 'playwright';
 export const SCREENSHOT_SIZE = { width: 1600, height: 900 };
 
 /**
- * Launch a headless Chromium browser + page sized for slide screenshots.
+ * Launch a reusable headless Chromium browser.
  * Caller is responsible for closing the browser when done.
  */
 export async function createScreenshotBrowser() {
   const browser = await chromium.launch({ headless: true });
+  return { browser };
+}
+
+/**
+ * Create a fresh screenshot page/context from an existing browser.
+ * Caller must close the returned context.
+ */
+export async function createScreenshotPage(browser) {
   const context = await browser.newContext({ viewport: SCREENSHOT_SIZE });
   const page = await context.newPage();
-  return { browser, page };
+  return { context, page };
 }
 
 /**

@@ -66,6 +66,42 @@
     }
 
     .nav-spacer { flex: 1; }
+
+    .slide-status-chip {
+      margin-right: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      text-transform: uppercase;
+    }
+
+    .slide-status-chip.idle {
+      color: #a3a3a3;
+      background: #232323;
+      border-color: #2f2f2f;
+    }
+
+    .slide-status-chip.running {
+      color: #facc15;
+      background: #352b10;
+      border-color: #5a4718;
+    }
+
+    .slide-status-chip.success {
+      color: #22c55e;
+      background: #122c1c;
+      border-color: #1d4630;
+    }
+
+    .slide-status-chip.failed {
+      color: #ef4444;
+      background: #361516;
+      border-color: #5a2325;
+    }
+
     .brand {
       color: #555;
       font-size: 13px;
@@ -109,186 +145,368 @@
       z-index: 1;
     }
 
-    .selection-layer {
+    .bbox-layer {
       position: absolute;
       inset: 0;
-      z-index: 10;
+      z-index: 9;
       pointer-events: none;
-      border-radius: 4px;
     }
 
-    .selection-layer.active {
-      pointer-events: auto;
+    .draw-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      pointer-events: none;
       cursor: crosshair;
     }
 
-    .selection-box {
+    .draw-layer.active {
+      pointer-events: auto;
+    }
+
+    .draw-box {
       position: absolute;
-      border: 2px solid #ef4444;
-      background: rgba(239, 68, 68, 0.15);
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+      border: 2px dashed #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      display: none;
       pointer-events: none;
-      z-index: 11;
     }
 
-    .feedback-panel {
-      width: 420px;
+    .bbox-item {
+      position: absolute;
+      border: 2px solid #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      pointer-events: auto;
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+
+    .bbox-item:hover {
+      border-color: #0ea5e9;
+    }
+
+    .bbox-item.selected {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    .bbox-index {
+      position: absolute;
+      top: -14px;
+      left: -2px;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 3px;
+      background: #0ea5e9;
+      color: #fff;
+      font-size: 11px;
+      line-height: 16px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .bbox-item.selected .bbox-index {
+      background: #ef4444;
+    }
+
+    .bbox-delete {
+      display: none;
+      position: absolute;
+      top: -14px;
+      right: -14px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid #7f1d1d;
+      background: #ef4444;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 20px;
+      cursor: pointer;
+    }
+
+    .bbox-item.selected .bbox-delete {
+      display: block;
+    }
+
+    .sidebar {
+      width: 430px;
       min-width: 340px;
-      background: #1a1a1a;
       border-left: 1px solid #333;
+      background: #1a1a1a;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      flex-shrink: 0;
+      min-height: 0;
     }
 
-    .panel-section {
-      padding: 14px;
+    .chat-section {
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
     }
 
-    .panel-section + .panel-section {
-      border-top: 1px solid #333;
-    }
-
-    .panel-label {
-      color: #aaa;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .feedback-textarea {
-      width: 100%;
-      height: 120px;
-      background: #222;
-      color: #eee;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 10px 12px;
+    .chat-header {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      border-bottom: 1px solid #333;
       font-size: 13px;
-      font-family: inherit;
-      resize: vertical;
-      line-height: 1.5;
-      outline: none;
-      transition: border-color 0.15s;
+      font-weight: 600;
+      color: #d1d5db;
     }
 
-    .feedback-textarea:focus { border-color: #666; }
-    .feedback-textarea::placeholder { color: #555; }
-
-    .button-row {
+    .chat-messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 12px;
       display: flex;
+      flex-direction: column;
       gap: 8px;
+      background: #151515;
+    }
+
+    .chat-messages:empty::before {
+      content: 'Prompt history appears here.';
+      color: #666;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    .message {
+      border: 1px solid #2f2f2f;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #d1d5db;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      border-color: #1d4ed8;
+      background: rgba(37, 99, 235, 0.13);
+    }
+
+    .message.system {
+      border-color: #355a37;
+      background: rgba(22, 163, 74, 0.12);
+    }
+
+    .message.error {
+      border-color: #7f1d1d;
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .composer {
+      border-top: 1px solid #333;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #1a1a1a;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .btn {
-      background: #333;
-      color: #fff;
       border: none;
       border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
+      padding: 7px 10px;
+      font-size: 12px;
       font-family: inherit;
       cursor: pointer;
       transition: background 0.15s;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      min-height: 34px;
-      white-space: nowrap;
+      gap: 6px;
     }
 
-    .btn:hover { background: #555; }
-    .btn:disabled { opacity: 0.3; cursor: default; }
-    .btn:disabled:hover { background: #333; }
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
 
-    .btn-region {
+    .btn:disabled:hover {
+      filter: none;
+    }
+
+    .btn-bbox {
       background: #0f766e;
-      flex: 1;
+      color: #fff;
     }
 
-    .btn-region:hover { background: #0d9488; }
+    .btn-bbox:hover { background: #0d9488; }
+
+    .btn-bbox.active {
+      background: #14b8a6;
+      color: #052e2b;
+      font-weight: 700;
+    }
 
     .btn-clear {
       background: #444;
-      min-width: 88px;
+      color: #fff;
     }
 
-    .btn-codex {
-      background: #2563eb;
+    .btn-clear:hover { background: #575757; }
+
+    .bbox-count {
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    .prompt-input {
       width: 100%;
-    }
-
-    .btn-codex:hover { background: #3b82f6; }
-
-    .selection-meta {
-      background: #222;
-      border: 1px solid #444;
+      min-height: 84px;
+      max-height: 200px;
+      resize: vertical;
       border-radius: 6px;
+      border: 1px solid #444;
+      background: #222;
+      color: #e5e7eb;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.45;
       padding: 10px;
-      font-size: 12px;
-      color: #ccc;
-      line-height: 1.5;
-      min-height: 58px;
+      outline: none;
     }
 
-    .xpath-list {
-      background: #222;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 8px 10px;
-      max-height: 140px;
+    .prompt-input:focus {
+      border-color: #666;
+    }
+
+    .prompt-input::placeholder {
+      color: #666;
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .hint {
+      color: #6b7280;
+      font-size: 11px;
+    }
+
+    .btn-send {
+      background: #2563eb;
+      color: #fff;
+      min-width: 108px;
+    }
+
+    .btn-send:hover { background: #3b82f6; }
+
+    .runs-section {
+      border-top: 1px solid #333;
+      padding: 10px;
+      background: #141414;
+      max-height: 36%;
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .section-label {
+      color: #9ca3af;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .runs-list {
       overflow-y: auto;
-      font-size: 12px;
-      line-height: 1.5;
-      color: #bbb;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .run-item {
+      border: 1px solid #2f2f2f;
+      border-radius: 8px;
+      padding: 8px;
+      background: #1c1c1c;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .xpath-item {
-      border-left: 2px solid #444;
-      padding-left: 8px;
-    }
-
-    .xpath-item .path {
-      color: #e5e7eb;
-      word-break: break-all;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-    }
-
-    .xpath-item .text {
-      color: #9ca3af;
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .log-section {
-      flex: 1;
-      min-height: 0;
-    }
-
-    .log-view {
-      flex: 1;
-      min-height: 0;
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 6px;
+    .run-item-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
       color: #d1d5db;
-      font-size: 12px;
-      line-height: 1.45;
-      padding: 10px;
-      overflow: auto;
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    .run-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .run-dot.running { background: #facc15; }
+    .run-dot.success { background: #22c55e; }
+    .run-dot.failed { background: #ef4444; }
+    .run-dot.idle { background: #6b7280; }
+
+    .run-slide {
+      color: #e5e7eb;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .run-meta {
+      color: #9ca3af;
+      font-size: 11px;
+    }
+
+    .run-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-log {
+      background: #333;
+      color: #fff;
+      font-size: 11px;
+      padding: 5px 8px;
+    }
+
+    .btn-log:hover { background: #454545; }
+
+    .run-log {
       white-space: pre-wrap;
+      background: #101010;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #d1d5db;
+      max-height: 180px;
+      overflow: auto;
     }
 
     .status-bar {
@@ -324,22 +542,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .spinner {
-      display: none;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-    }
-
-    .spinner.visible { display: inline-block; }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
   </style>
 </head>
 <body>
@@ -351,6 +553,7 @@
         <button id="btn-next" title="Next slide (Right arrow)">Next &#9654;</button>
       </div>
       <div class="nav-spacer"></div>
+      <span class="slide-status-chip idle" id="slide-status-chip">idle</span>
       <span class="brand">ppt-agent</span>
     </div>
 
@@ -358,41 +561,37 @@
       <div class="slide-panel" id="slide-panel">
         <div class="slide-wrapper" id="slide-wrapper">
           <iframe id="slide-iframe" sandbox="allow-same-origin allow-scripts" loading="eager"></iframe>
-          <div class="selection-layer" id="selection-layer"></div>
-          <div class="selection-box" id="selection-box" style="display:none"></div>
-        </div>
-      </div>
-
-      <div class="feedback-panel">
-        <div class="panel-section">
-          <div class="panel-label">Edit Request</div>
-          <textarea
-            class="feedback-textarea"
-            id="feedback-textarea"
-            placeholder="Describe the change you want in the selected region..."
-          ></textarea>
-          <div class="button-row">
-            <button class="btn btn-region" id="btn-select-region">Select Region</button>
-            <button class="btn btn-clear" id="btn-clear-region" disabled>Clear</button>
+          <div class="bbox-layer" id="bbox-layer"></div>
+          <div class="draw-layer" id="draw-layer">
+            <div class="draw-box" id="draw-box"></div>
           </div>
-          <button class="btn btn-codex" id="btn-apply" disabled>
-            <span class="spinner" id="spinner-apply"></span>
-            <span id="btn-apply-text">Send To Codex</span>
-          </button>
-        </div>
-
-        <div class="panel-section">
-          <div class="panel-label">Selected Region</div>
-          <div class="selection-meta" id="selection-meta">No region selected.</div>
-          <div class="panel-label">Detected XPath Targets</div>
-          <div class="xpath-list" id="xpath-list">No targets yet.</div>
-        </div>
-
-        <div class="panel-section log-section">
-          <div class="panel-label">Codex Work Log (stdout/stderr)</div>
-          <div class="log-view" id="log-view"></div>
         </div>
       </div>
+
+      <aside class="sidebar">
+        <section class="chat-section">
+          <div class="chat-header">Slide Chat</div>
+          <div class="chat-messages" id="chat-messages"></div>
+
+          <div class="composer">
+            <div class="tool-row">
+              <button class="btn btn-bbox" id="btn-draw-bbox">BBox Tool</button>
+              <button class="btn btn-clear" id="btn-clear-bboxes">Clear Boxes</button>
+              <span class="bbox-count" id="bbox-count">0 boxes</span>
+            </div>
+            <textarea id="prompt-input" class="prompt-input" placeholder="Describe the edit for this slide..."></textarea>
+            <div class="composer-actions">
+              <span class="hint">Cmd/Ctrl+Enter to run</span>
+              <button class="btn btn-send" id="btn-send">Run Codex</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="runs-section">
+          <div class="section-label">Execution Records</div>
+          <div class="runs-list" id="runs-list"></div>
+        </section>
+      </aside>
     </div>
 
     <div class="status-bar">
@@ -405,99 +604,70 @@
   </div>
 
   <script>
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
     let slides = [];
     let currentIndex = 0;
-    let isApplying = false;
-    let isSelecting = false;
-    let dragStart = null;
-    let selection = null;
-    let targets = [];
-    let currentRunId = null;
+    let drawMode = false;
+    let drawStart = null;
+    let drawing = false;
+
+    const slideStates = new Map();
+    const activeRunBySlide = new Map();
+    const pendingRequestBySlide = new Set();
+
+    const runsById = new Map();
+    const runLogsById = new Map();
+    let expandedRunId = null;
+
+    const chatMessages = [];
 
     const SLIDE_W = 960;
     const SLIDE_H = 540;
 
+    // -------------------------------------------------------------------------
+    // DOM refs
+    // -------------------------------------------------------------------------
     const $ = (sel) => document.querySelector(sel);
     const btnPrev = $('#btn-prev');
     const btnNext = $('#btn-next');
     const slideCounter = $('#slide-counter');
+    const slideStatusChip = $('#slide-status-chip');
+
     const slideIframe = $('#slide-iframe');
     const slidePanel = $('#slide-panel');
     const slideWrapper = $('#slide-wrapper');
-    const selectionLayer = $('#selection-layer');
-    const selectionBox = $('#selection-box');
+    const bboxLayer = $('#bbox-layer');
+    const drawLayer = $('#draw-layer');
+    const drawBox = $('#draw-box');
 
-    const textarea = $('#feedback-textarea');
-    const btnSelectRegion = $('#btn-select-region');
-    const btnClearRegion = $('#btn-clear-region');
-    const btnApply = $('#btn-apply');
-    const btnApplyText = $('#btn-apply-text');
-    const spinnerApply = $('#spinner-apply');
+    const chatMessagesEl = $('#chat-messages');
+    const promptInput = $('#prompt-input');
+    const btnDrawBbox = $('#btn-draw-bbox');
+    const btnClearBboxes = $('#btn-clear-bboxes');
+    const bboxCountEl = $('#bbox-count');
+    const btnSend = $('#btn-send');
 
-    const selectionMeta = $('#selection-meta');
-    const xpathList = $('#xpath-list');
-    const logView = $('#log-view');
+    const runsListEl = $('#runs-list');
 
     const statusDot = $('#status-dot');
     const statusConn = $('#status-connection');
     const statusMsg = $('#status-message');
 
+    // -------------------------------------------------------------------------
+    // Utils
+    // -------------------------------------------------------------------------
     function setStatus(message) {
       statusMsg.textContent = message;
     }
 
-    function appendLog(text) {
-      if (!text) return;
-      logView.textContent += text;
-      logView.scrollTop = logView.scrollHeight;
-    }
-
-    function clearLog() {
-      logView.textContent = '';
+    function currentSlideFile() {
+      return slides[currentIndex] || null;
     }
 
     function clamp(v, min, max) {
       return Math.max(min, Math.min(max, v));
-    }
-
-    function resetSelection() {
-      selection = null;
-      targets = [];
-      dragStart = null;
-      selectionBox.style.display = 'none';
-      btnClearRegion.disabled = true;
-      renderSelectionMeta();
-      renderTargets();
-      updateApplyState();
-    }
-
-    function renderSelectionMeta() {
-      if (!selection) {
-        selectionMeta.textContent = 'No region selected.';
-        return;
-      }
-
-      selectionMeta.textContent = `x=${selection.x}, y=${selection.y}, width=${selection.width}, height=${selection.height}`;
-    }
-
-    function renderTargets() {
-      if (!targets.length) {
-        xpathList.textContent = selection ? 'No intersecting elements found.' : 'No targets yet.';
-        return;
-      }
-
-      xpathList.innerHTML = targets.map((target, idx) => {
-        const safePath = escapeHtml(target.xpath || '');
-        const safeText = escapeHtml(target.text || '(no text)');
-        const safeTag = escapeHtml(target.tag || 'unknown');
-        return [
-          '<div class="xpath-item">',
-          `<div><strong>${idx + 1}. ${safeTag}</strong></div>`,
-          `<div class="path">${safePath}</div>`,
-          `<div class="text">${safeText}</div>`,
-          '</div>'
-        ].join('');
-      }).join('');
     }
 
     function escapeHtml(str) {
@@ -505,27 +675,149 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function updateApplyState() {
-      const prompt = textarea.value.trim();
-      btnApply.disabled = isApplying || !prompt || !selection;
-      btnSelectRegion.disabled = isApplying;
-      btnClearRegion.disabled = isApplying || !selection;
+    function formatTime(iso) {
+      if (!iso) return '-';
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return iso;
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
-    function goToSlide(index) {
-      if (index < 0 || index >= slides.length) return;
-      currentIndex = index;
-      slideIframe.src = `/slides/${slides[currentIndex]}`;
-      slideCounter.textContent = `${currentIndex + 1} / ${slides.length}`;
-      btnPrev.disabled = currentIndex === 0;
-      btnNext.disabled = currentIndex === slides.length - 1;
-      resetSelection();
-      setStatus(`Loaded ${slides[currentIndex]}`);
+    function randomId(prefix) {
+      return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
     }
 
+    function getSlideState(slide) {
+      if (!slideStates.has(slide)) {
+        slideStates.set(slide, {
+          prompt: '',
+          boxes: [],
+          selectedBoxId: null,
+        });
+      }
+      return slideStates.get(slide);
+    }
+
+    function getLatestRunForSlide(slide) {
+      const runs = Array.from(runsById.values())
+        .filter((run) => run.slide === slide)
+        .sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)));
+      return runs[0] || null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Chat / Runs UI
+    // -------------------------------------------------------------------------
+    function addChatMessage(kind, text) {
+      chatMessages.push({
+        id: randomId('msg'),
+        kind,
+        text,
+        at: new Date().toISOString(),
+      });
+
+      while (chatMessages.length > 80) {
+        chatMessages.shift();
+      }
+
+      renderChatMessages();
+    }
+
+    function renderChatMessages() {
+      if (chatMessages.length === 0) {
+        chatMessagesEl.innerHTML = '';
+        return;
+      }
+
+      chatMessagesEl.innerHTML = chatMessages
+        .map((msg) => {
+          const time = formatTime(msg.at);
+          return [
+            `<div class="message ${msg.kind}">`,
+            `${escapeHtml(msg.text)}`,
+            `<div class="run-meta" style="margin-top:6px;">${time}</div>`,
+            '</div>',
+          ].join('');
+        })
+        .join('');
+
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+
+    async function toggleRunLog(runId) {
+      if (expandedRunId === runId) {
+        expandedRunId = null;
+        renderRunsList();
+        return;
+      }
+
+      expandedRunId = runId;
+
+      if (!runLogsById.has(runId)) {
+        try {
+          const res = await fetch(`/api/runs/${encodeURIComponent(runId)}/log`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const text = await res.text();
+          runLogsById.set(runId, text || '(empty log)');
+        } catch (error) {
+          runLogsById.set(runId, `Failed to load log: ${error.message}`);
+        }
+      }
+
+      renderRunsList();
+    }
+
+    function renderRunsList() {
+      const runs = Array.from(runsById.values())
+        .sort((a, b) => String(b.startedAt).localeCompare(String(a.startedAt)))
+        .slice(0, 60);
+
+      if (runs.length === 0) {
+        runsListEl.innerHTML = '<div class="run-meta">No runs yet.</div>';
+        return;
+      }
+
+      runsListEl.innerHTML = runs
+        .map((run) => {
+          const statusClass = run.status || 'idle';
+          const isExpanded = expandedRunId === run.runId;
+          const logText = isExpanded
+            ? escapeHtml(runLogsById.get(run.runId) || run.logPreview || '(no log)')
+            : '';
+
+          return [
+            `<div class="run-item">`,
+            `<div class="run-item-head">`,
+            `<span class="run-dot ${statusClass}"></span>`,
+            `<span class="run-slide">${escapeHtml(run.slide)}</span>`,
+            `</div>`,
+            `<div class="run-meta">${escapeHtml(run.status || 'idle')} | ${formatTime(run.startedAt)}</div>`,
+            `<div class="run-meta">${escapeHtml(run.message || '')}</div>`,
+            `<div class="run-actions">`,
+            `<span class="run-meta">runId: ${escapeHtml(run.runId)}</span>`,
+            `<button class="btn btn-log" data-run-log-btn="${escapeHtml(run.runId)}">${isExpanded ? 'Hide Log' : 'View Log'}</button>`,
+            `</div>`,
+            isExpanded ? `<div class="run-log">${logText}</div>` : '',
+            `</div>`,
+          ].join('');
+        })
+        .join('');
+    }
+
+    runsListEl.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-run-log-btn]');
+      if (!button) return;
+      const runId = button.getAttribute('data-run-log-btn');
+      if (!runId) return;
+      await toggleRunLog(runId);
+    });
+
+    // -------------------------------------------------------------------------
+    // Slide & bbox rendering
+    // -------------------------------------------------------------------------
     function scaleSlide() {
       const padX = 48;
       const padY = 48;
@@ -537,6 +829,159 @@
       slideWrapper.style.transform = `scale(${scale})`;
     }
 
+    function renderBboxes() {
+      const slide = currentSlideFile();
+      if (!slide) {
+        bboxLayer.innerHTML = '';
+        bboxCountEl.textContent = '0 boxes';
+        return;
+      }
+
+      const state = getSlideState(slide);
+      bboxLayer.innerHTML = state.boxes
+        .map((box, index) => {
+          const selectedClass = box.id === state.selectedBoxId ? 'selected' : '';
+          return [
+            `<div class="bbox-item ${selectedClass}" data-box-id="${escapeHtml(box.id)}" style="left:${box.x}px;top:${box.y}px;width:${box.width}px;height:${box.height}px;">`,
+            `<div class="bbox-index">${index + 1}</div>`,
+            `<button class="bbox-delete" data-box-delete="${escapeHtml(box.id)}" title="Delete bbox">×</button>`,
+            `</div>`,
+          ].join('');
+        })
+        .join('');
+
+      bboxCountEl.textContent = `${state.boxes.length} box${state.boxes.length === 1 ? '' : 'es'}`;
+      updateSendState();
+    }
+
+    function setDrawMode(enabled) {
+      drawMode = enabled;
+      drawLayer.classList.toggle('active', enabled);
+      btnDrawBbox.classList.toggle('active', enabled);
+      btnDrawBbox.textContent = enabled ? 'BBox Tool ON' : 'BBox Tool';
+      if (enabled) {
+        setStatus('Drag on slide to add bounding boxes. Click a box to show delete button.');
+      } else {
+        setStatus('BBox tool disabled.');
+        drawBox.style.display = 'none';
+        drawing = false;
+        drawStart = null;
+      }
+    }
+
+    function clientToSlidePoint(clientX, clientY) {
+      const rect = drawLayer.getBoundingClientRect();
+      const relX = clamp((clientX - rect.left) / rect.width, 0, 1);
+      const relY = clamp((clientY - rect.top) / rect.height, 0, 1);
+      return {
+        x: Math.round(relX * SLIDE_W),
+        y: Math.round(relY * SLIDE_H),
+      };
+    }
+
+    function startDrawing(event) {
+      if (!drawMode) return;
+      event.preventDefault();
+
+      drawing = true;
+      drawStart = clientToSlidePoint(event.clientX, event.clientY);
+      drawBox.style.display = 'block';
+      drawBox.style.left = `${drawStart.x}px`;
+      drawBox.style.top = `${drawStart.y}px`;
+      drawBox.style.width = '1px';
+      drawBox.style.height = '1px';
+    }
+
+    function moveDrawing(event) {
+      if (!drawMode || !drawing || !drawStart) return;
+      const current = clientToSlidePoint(event.clientX, event.clientY);
+
+      const x = Math.min(drawStart.x, current.x);
+      const y = Math.min(drawStart.y, current.y);
+      const width = Math.max(1, Math.abs(current.x - drawStart.x));
+      const height = Math.max(1, Math.abs(current.y - drawStart.y));
+
+      drawBox.style.left = `${x}px`;
+      drawBox.style.top = `${y}px`;
+      drawBox.style.width = `${width}px`;
+      drawBox.style.height = `${height}px`;
+    }
+
+    function endDrawing(event) {
+      if (!drawMode || !drawing || !drawStart) return;
+
+      const slide = currentSlideFile();
+      if (!slide) return;
+
+      const current = clientToSlidePoint(event.clientX, event.clientY);
+
+      const x = Math.min(drawStart.x, current.x);
+      const y = Math.min(drawStart.y, current.y);
+      const width = Math.max(1, Math.abs(current.x - drawStart.x));
+      const height = Math.max(1, Math.abs(current.y - drawStart.y));
+
+      drawBox.style.display = 'none';
+      drawing = false;
+      drawStart = null;
+
+      if (width < 3 || height < 3) return;
+
+      const state = getSlideState(slide);
+      const newBox = {
+        id: randomId('bbox'),
+        x,
+        y,
+        width,
+        height,
+      };
+
+      state.boxes.push(newBox);
+      state.selectedBoxId = newBox.id;
+      renderBboxes();
+      setStatus(`Added bbox #${state.boxes.length} for ${slide}.`);
+    }
+
+    function clearBboxesForCurrentSlide() {
+      const slide = currentSlideFile();
+      if (!slide) return;
+
+      const state = getSlideState(slide);
+      state.boxes = [];
+      state.selectedBoxId = null;
+      renderBboxes();
+      setStatus('All bounding boxes cleared for current slide.');
+    }
+
+    bboxLayer.addEventListener('click', (event) => {
+      const slide = currentSlideFile();
+      if (!slide) return;
+
+      const state = getSlideState(slide);
+      const deleteButton = event.target.closest('[data-box-delete]');
+      if (deleteButton) {
+        const boxId = deleteButton.getAttribute('data-box-delete');
+        state.boxes = state.boxes.filter((box) => box.id !== boxId);
+        if (state.selectedBoxId === boxId) state.selectedBoxId = null;
+        renderBboxes();
+        setStatus('Bounding box deleted.');
+        event.stopPropagation();
+        return;
+      }
+
+      const boxEl = event.target.closest('[data-box-id]');
+      if (boxEl) {
+        state.selectedBoxId = boxEl.getAttribute('data-box-id');
+        renderBboxes();
+        return;
+      }
+
+      state.selectedBoxId = null;
+      renderBboxes();
+    });
+
+    // -------------------------------------------------------------------------
+    // XPath extraction
+    // -------------------------------------------------------------------------
     function getXPath(el) {
       if (!el || el.nodeType !== Node.ELEMENT_NODE) return '';
 
@@ -568,7 +1013,7 @@
       return (right - left) * (bottom - top);
     }
 
-    function extractTargetsForSelection(sel) {
+    function extractTargetsForBox(box) {
       const doc = slideIframe.contentDocument;
       if (!doc || !doc.body) return [];
 
@@ -582,25 +1027,23 @@
         const rect = el.getBoundingClientRect();
         if (!rect || rect.width <= 1 || rect.height <= 1) continue;
 
-        const box = {
+        const targetBox = {
           x: rect.left,
           y: rect.top,
           width: rect.width,
           height: rect.height,
         };
 
-        const area = intersectArea(sel, box);
+        const area = intersectArea(box, targetBox);
         if (area <= 0) continue;
 
         const xpath = getXPath(el);
         if (!xpath) continue;
 
-        const text = (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 140);
-
         candidates.push({
           xpath,
           tag,
-          text,
+          text: (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 140),
           area,
         });
       }
@@ -619,134 +1062,169 @@
       return dedup;
     }
 
-    function updateSelectionBox(sel) {
-      if (!sel) {
-        selectionBox.style.display = 'none';
+    // -------------------------------------------------------------------------
+    // Send
+    // -------------------------------------------------------------------------
+    function updateSlideStatusChip() {
+      const slide = currentSlideFile();
+      if (!slide) {
+        slideStatusChip.textContent = 'idle';
+        slideStatusChip.className = 'slide-status-chip idle';
         return;
       }
 
-      selectionBox.style.display = 'block';
-      selectionBox.style.left = `${sel.x}px`;
-      selectionBox.style.top = `${sel.y}px`;
-      selectionBox.style.width = `${sel.width}px`;
-      selectionBox.style.height = `${sel.height}px`;
+      let status = 'idle';
+      if (pendingRequestBySlide.has(slide)) {
+        status = 'running';
+      } else if (activeRunBySlide.has(slide)) {
+        status = 'running';
+      } else {
+        const latest = getLatestRunForSlide(slide);
+        if (latest?.status === 'success') status = 'success';
+        if (latest?.status === 'failed') status = 'failed';
+      }
+
+      slideStatusChip.textContent = status;
+      slideStatusChip.className = `slide-status-chip ${status}`;
     }
 
-    function clientToSlidePoint(clientX, clientY) {
-      const rect = selectionLayer.getBoundingClientRect();
-      const relX = clamp((clientX - rect.left) / rect.width, 0, 1);
-      const relY = clamp((clientY - rect.top) / rect.height, 0, 1);
-
-      return {
-        x: Math.round(relX * SLIDE_W),
-        y: Math.round(relY * SLIDE_H),
-      };
-    }
-
-    function enterSelectionMode() {
-      if (isApplying) return;
-      isSelecting = true;
-      dragStart = null;
-      selectionLayer.classList.add('active');
-      setStatus('Drag on the slide to select the edit region.');
-    }
-
-    function exitSelectionMode() {
-      isSelecting = false;
-      dragStart = null;
-      selectionLayer.classList.remove('active');
-    }
-
-    function onSelectStart(ev) {
-      if (!isSelecting) return;
-      ev.preventDefault();
-      dragStart = clientToSlidePoint(ev.clientX, ev.clientY);
-      updateSelectionBox({ x: dragStart.x, y: dragStart.y, width: 1, height: 1 });
-    }
-
-    function onSelectMove(ev) {
-      if (!isSelecting || !dragStart) return;
-
-      const point = clientToSlidePoint(ev.clientX, ev.clientY);
-      const x = Math.min(dragStart.x, point.x);
-      const y = Math.min(dragStart.y, point.y);
-      const width = Math.max(1, Math.abs(point.x - dragStart.x));
-      const height = Math.max(1, Math.abs(point.y - dragStart.y));
-
-      updateSelectionBox({ x, y, width, height });
-    }
-
-    function onSelectEnd(ev) {
-      if (!isSelecting || !dragStart) return;
-
-      const point = clientToSlidePoint(ev.clientX, ev.clientY);
-      const x = Math.min(dragStart.x, point.x);
-      const y = Math.min(dragStart.y, point.y);
-      const width = Math.max(1, Math.abs(point.x - dragStart.x));
-      const height = Math.max(1, Math.abs(point.y - dragStart.y));
-
-      exitSelectionMode();
-
-      if (width < 3 || height < 3) {
-        resetSelection();
-        setStatus('Selection is too small. Select a larger region.');
+    function updateSendState() {
+      const slide = currentSlideFile();
+      if (!slide) {
+        btnSend.disabled = true;
+        btnClearBboxes.disabled = true;
         return;
       }
 
-      selection = { x, y, width, height };
-      targets = extractTargetsForSelection(selection);
+      const state = getSlideState(slide);
+      const prompt = (promptInput.value || '').trim();
+      const hasBoxes = state.boxes.length > 0;
+      const blocked = pendingRequestBySlide.has(slide) || activeRunBySlide.has(slide);
 
-      updateSelectionBox(selection);
-      renderSelectionMeta();
-      renderTargets();
-      updateApplyState();
-
-      setStatus(`Region selected (${targets.length} XPath target(s) detected).`);
+      btnSend.disabled = !prompt || !hasBoxes || blocked;
+      btnClearBboxes.disabled = state.boxes.length === 0;
+      updateSlideStatusChip();
     }
 
     async function applyChanges() {
-      if (isApplying || !selection) return;
-      const prompt = textarea.value.trim();
+      const slide = currentSlideFile();
+      if (!slide) return;
+
+      const state = getSlideState(slide);
+      const prompt = (promptInput.value || '').trim();
+
       if (!prompt) return;
+      if (state.boxes.length === 0) {
+        setStatus('Add at least one bbox before running Codex.');
+        return;
+      }
 
-      isApplying = true;
-      btnApplyText.textContent = 'Running Codex...';
-      spinnerApply.classList.add('visible');
-      updateApplyState();
+      const selections = state.boxes.map((box) => ({
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        targets: extractTargetsForBox(box),
+      }));
 
-      clearLog();
-      appendLog(`[editor] submitting ${slides[currentIndex]}\n`);
-      setStatus('Submitting edit request to Codex...');
+      addChatMessage('user', `[${slide}] ${prompt}`);
+
+      pendingRequestBySlide.add(slide);
+      state.prompt = '';
+      promptInput.value = '';
+      updateSendState();
+      setStatus(`Submitting ${slide} to Codex...`);
 
       try {
         const res = await fetch('/api/apply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            slide: slides[currentIndex],
+            slide,
             prompt,
-            selection,
-            targets,
+            selections,
           }),
         });
 
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          throw new Error(data.error || `Server error ${res.status}`);
+          const message = data.error || `Server error ${res.status}`;
+          addChatMessage('error', `[${slide}] ${message}`);
+          setStatus(`Error: ${message}`);
+          return;
         }
 
-        currentRunId = data.runId || currentRunId;
-        setStatus(data.message || 'Codex request completed.');
-      } catch (err) {
-        setStatus(`Error: ${err.message}`);
-        appendLog(`\n[editor] request failed: ${err.message}\n`);
+        if (data.runId) {
+          const existing = runsById.get(data.runId) || {};
+          runsById.set(data.runId, {
+            ...existing,
+            runId: data.runId,
+            slide,
+            status: data.success ? 'success' : 'failed',
+            code: data.code,
+            message: data.message,
+            startedAt: existing.startedAt || new Date().toISOString(),
+            finishedAt: new Date().toISOString(),
+            logPreview: existing.logPreview || '',
+          });
+          renderRunsList();
+        }
+
+        addChatMessage(
+          data.success ? 'system' : 'error',
+          `[${slide}] ${data.message || (data.success ? 'Completed' : 'Failed')}`,
+        );
+
+        setStatus(data.message || 'Codex run completed.');
+      } catch (error) {
+        addChatMessage('error', `[${slide}] ${error.message}`);
+        setStatus(`Error: ${error.message}`);
       } finally {
-        isApplying = false;
-        btnApplyText.textContent = 'Send To Codex';
-        spinnerApply.classList.remove('visible');
-        updateApplyState();
+        pendingRequestBySlide.delete(slide);
+        updateSendState();
       }
+    }
+
+    // -------------------------------------------------------------------------
+    // Navigation
+    // -------------------------------------------------------------------------
+    function persistCurrentSlideDraft() {
+      const slide = currentSlideFile();
+      if (!slide) return;
+      const state = getSlideState(slide);
+      state.prompt = promptInput.value;
+    }
+
+    function goToSlide(index) {
+      if (index < 0 || index >= slides.length) return;
+
+      persistCurrentSlideDraft();
+
+      currentIndex = index;
+      const slide = currentSlideFile();
+      slideIframe.src = `/slides/${slide}`;
+      slideCounter.textContent = `${currentIndex + 1} / ${slides.length}`;
+      btnPrev.disabled = currentIndex === 0;
+      btnNext.disabled = currentIndex === slides.length - 1;
+
+      const state = getSlideState(slide);
+      promptInput.value = state.prompt || '';
+      renderBboxes();
+      updateSendState();
+      setStatus(`Loaded ${slide}`);
+    }
+
+    // -------------------------------------------------------------------------
+    // SSE
+    // -------------------------------------------------------------------------
+    function upsertRun(run) {
+      if (!run?.runId) return;
+      const existing = runsById.get(run.runId) || {};
+      runsById.set(run.runId, {
+        ...existing,
+        ...run,
+      });
     }
 
     function connectSSE() {
@@ -758,46 +1236,110 @@
         statusConn.textContent = 'Connected';
       };
 
-      evtSource.addEventListener('fileChanged', (e) => {
+      evtSource.addEventListener('runsSnapshot', (event) => {
         try {
-          const { file } = JSON.parse(e.data);
-          if (file === slides[currentIndex]) {
-            slideIframe.src = slideIframe.src;
-            setStatus(`Slide ${file} updated.`);
+          const payload = JSON.parse(event.data);
+
+          runsById.clear();
+          for (const run of payload.runs || []) {
+            upsertRun(run);
+            if (run.logPreview) runLogsById.set(run.runId, run.logPreview);
           }
-        } catch (err) {
-          console.error('SSE parse error:', err);
+
+          activeRunBySlide.clear();
+          for (const active of payload.activeRuns || []) {
+            if (active.slide && active.runId) {
+              activeRunBySlide.set(active.slide, active.runId);
+            }
+          }
+
+          renderRunsList();
+          updateSendState();
+        } catch (error) {
+          console.error('runsSnapshot parse error:', error);
         }
       });
 
-      evtSource.addEventListener('applyStarted', (e) => {
+      evtSource.addEventListener('applyStarted', (event) => {
         try {
-          const data = JSON.parse(e.data);
-          currentRunId = data.runId;
-          appendLog(`[codex] run ${data.runId} started for ${data.slide}\n`);
-        } catch (err) {
-          console.error('SSE applyStarted parse error:', err);
+          const payload = JSON.parse(event.data);
+          activeRunBySlide.set(payload.slide, payload.runId);
+
+          upsertRun({
+            runId: payload.runId,
+            slide: payload.slide,
+            status: 'running',
+            message: `Running (${payload.selectionsCount || 0} bbox)` ,
+            startedAt: new Date().toISOString(),
+            logPreview: '',
+          });
+
+          addChatMessage('system', `[${payload.slide}] run started (${payload.runId})`);
+          renderRunsList();
+          updateSendState();
+        } catch (error) {
+          console.error('applyStarted parse error:', error);
         }
       });
 
-      evtSource.addEventListener('applyLog', (e) => {
+      evtSource.addEventListener('applyLog', (event) => {
         try {
-          const data = JSON.parse(e.data);
-          if (currentRunId && data.runId !== currentRunId) return;
-          appendLog(data.chunk || '');
-        } catch (err) {
-          console.error('SSE applyLog parse error:', err);
+          const payload = JSON.parse(event.data);
+          if (!payload.runId) return;
+
+          const existing = runLogsById.get(payload.runId) || '';
+          const merged = (existing + (payload.chunk || '')).slice(-300000);
+          runLogsById.set(payload.runId, merged);
+
+          const run = runsById.get(payload.runId);
+          if (run) {
+            run.logPreview = merged.slice(-2000);
+            runsById.set(payload.runId, run);
+          }
+
+          if (expandedRunId === payload.runId) {
+            renderRunsList();
+          }
+        } catch (error) {
+          console.error('applyLog parse error:', error);
         }
       });
 
-      evtSource.addEventListener('applyFinished', (e) => {
+      evtSource.addEventListener('applyFinished', (event) => {
         try {
-          const data = JSON.parse(e.data);
-          if (currentRunId && data.runId !== currentRunId) return;
-          appendLog(`\n[codex] finished (code=${data.code}) ${data.message || ''}\n`);
-          setStatus(data.message || 'Codex run finished.');
-        } catch (err) {
-          console.error('SSE applyFinished parse error:', err);
+          const payload = JSON.parse(event.data);
+          activeRunBySlide.delete(payload.slide);
+
+          upsertRun({
+            runId: payload.runId,
+            slide: payload.slide,
+            status: payload.success ? 'success' : 'failed',
+            code: payload.code,
+            message: payload.message,
+            finishedAt: new Date().toISOString(),
+          });
+
+          addChatMessage(
+            payload.success ? 'system' : 'error',
+            `[${payload.slide}] ${payload.message || (payload.success ? 'completed' : 'failed')}`,
+          );
+
+          renderRunsList();
+          updateSendState();
+          setStatus(payload.message || 'Run finished.');
+        } catch (error) {
+          console.error('applyFinished parse error:', error);
+        }
+      });
+
+      evtSource.addEventListener('fileChanged', (event) => {
+        try {
+          const { file } = JSON.parse(event.data);
+          if (file === currentSlideFile()) {
+            slideIframe.src = slideIframe.src;
+          }
+        } catch (error) {
+          console.error('fileChanged parse error:', error);
         }
       });
 
@@ -808,52 +1350,92 @@
       };
     }
 
+    async function loadRunsInitial() {
+      try {
+        const res = await fetch('/api/runs');
+        if (!res.ok) return;
+        const payload = await res.json();
+
+        runsById.clear();
+        for (const run of payload.runs || []) {
+          upsertRun(run);
+          if (run.logPreview) runLogsById.set(run.runId, run.logPreview);
+        }
+
+        activeRunBySlide.clear();
+        for (const active of payload.activeRuns || []) {
+          if (active.slide && active.runId) {
+            activeRunBySlide.set(active.slide, active.runId);
+          }
+        }
+
+        renderRunsList();
+        updateSendState();
+      } catch {
+        // ignore
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Event wiring
+    // -------------------------------------------------------------------------
     btnPrev.addEventListener('click', () => goToSlide(currentIndex - 1));
     btnNext.addEventListener('click', () => goToSlide(currentIndex + 1));
-    btnSelectRegion.addEventListener('click', enterSelectionMode);
-    btnClearRegion.addEventListener('click', () => {
-      resetSelection();
-      setStatus('Selection cleared.');
+
+    btnDrawBbox.addEventListener('click', () => setDrawMode(!drawMode));
+    btnClearBboxes.addEventListener('click', clearBboxesForCurrentSlide);
+
+    drawLayer.addEventListener('mousedown', startDrawing);
+    window.addEventListener('mousemove', moveDrawing);
+    window.addEventListener('mouseup', endDrawing);
+
+    btnSend.addEventListener('click', applyChanges);
+
+    promptInput.addEventListener('input', () => {
+      const slide = currentSlideFile();
+      if (slide) {
+        const state = getSlideState(slide);
+        state.prompt = promptInput.value;
+      }
+      updateSendState();
     });
 
-    selectionLayer.addEventListener('mousedown', onSelectStart);
-    window.addEventListener('mousemove', onSelectMove);
-    window.addEventListener('mouseup', onSelectEnd);
+    document.addEventListener('keydown', (event) => {
+      const inTextarea = document.activeElement === promptInput;
 
-    btnApply.addEventListener('click', applyChanges);
-    textarea.addEventListener('input', updateApplyState);
-
-    document.addEventListener('keydown', (e) => {
-      const inTextarea = document.activeElement === textarea;
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
         applyChanges();
         return;
       }
 
-      if (e.key === 'Escape' && isSelecting) {
-        exitSelectionMode();
-        setStatus('Selection canceled.');
-        return;
+      if (event.key === 'Escape') {
+        if (drawMode) {
+          setDrawMode(false);
+          return;
+        }
       }
 
       if (inTextarea) return;
 
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
         goToSlide(currentIndex - 1);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
         goToSlide(currentIndex + 1);
       }
     });
 
     window.addEventListener('resize', scaleSlide);
     slideIframe.addEventListener('load', () => {
-      setStatus(`Loaded ${slides[currentIndex]}`);
+      renderBboxes();
+      updateSendState();
     });
 
+    // -------------------------------------------------------------------------
+    // Init
+    // -------------------------------------------------------------------------
     async function init() {
       setStatus('Loading slide list...');
 
@@ -873,16 +1455,14 @@
 
         goToSlide(0);
         scaleSlide();
-        renderSelectionMeta();
-        renderTargets();
-        updateApplyState();
-        setStatus('Ready. Select a region and describe the edit.');
-      } catch (err) {
-        setStatus(`Error loading slides: ${err.message}`);
-        console.error('Init error:', err);
-      }
+        await loadRunsInitial();
+        connectSSE();
 
-      connectSSE();
+        setStatus('Ready. Draw one or more bboxes and run Codex.');
+      } catch (error) {
+        setStatus(`Error loading slides: ${error.message}`);
+        console.error('Init error:', error);
+      }
     }
 
     init();

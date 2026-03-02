@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, mkdtemp, rm } from 'node:fs/promises';
 import { watch as fsWatch } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
 import {
@@ -36,6 +35,9 @@ async function loadDeps() {
 const DEFAULT_PORT = 3456;
 const DEFAULT_CODEX_MODEL = 'gpt-5.3-codex';
 const SLIDE_FILE_PATTERN = /^slide-.*\.html$/i;
+
+const MAX_RUNS = 200;
+const MAX_LOG_CHARS = 800_000;
 
 function printUsage() {
   process.stdout.write(`Usage: ppt-agent edit [options]\n\n`);
@@ -96,7 +98,7 @@ function broadcastSSE(event, data) {
 
 let browserPromise = null;
 
-async function getScreenshotPage() {
+async function getScreenshotBrowser() {
   if (!browserPromise) {
     browserPromise = screenshotMod.createScreenshotBrowser();
   }
@@ -105,9 +107,19 @@ async function getScreenshotPage() {
 
 async function closeBrowser() {
   if (browserPromise) {
-    const { browser } = await browserPromise;
+    const { browser } = await getScreenshotBrowser();
     browserPromise = null;
     await browser.close();
+  }
+}
+
+async function withScreenshotPage(callback) {
+  const { browser } = await getScreenshotBrowser();
+  const { context, page } = await screenshotMod.createScreenshotPage(browser);
+  try {
+    return await callback(page);
+  } finally {
+    await context.close().catch(() => {});
   }
 }
 
@@ -132,13 +144,36 @@ function sanitizeTargets(rawTargets) {
 
   return rawTargets
     .filter((target) => target && typeof target === 'object')
-    .slice(0, 20)
+    .slice(0, 30)
     .map((target) => ({
-      xpath: typeof target.xpath === 'string' ? target.xpath.slice(0, 400) : '',
+      xpath: typeof target.xpath === 'string' ? target.xpath.slice(0, 500) : '',
       tag: typeof target.tag === 'string' ? target.tag.slice(0, 40) : '',
       text: typeof target.text === 'string' ? target.text.slice(0, 400) : '',
     }))
     .filter((target) => target.xpath);
+}
+
+function normalizeSelections(rawSelections) {
+  if (!Array.isArray(rawSelections) || rawSelections.length === 0) {
+    throw new Error('At least one selection is required.');
+  }
+
+  return rawSelections.slice(0, 24).map((selection) => {
+    const selectionSource = selection?.bbox && typeof selection.bbox === 'object'
+      ? selection.bbox
+      : selection;
+
+    const bbox = normalizeSelection(selectionSource, SLIDE_SIZE);
+    const targets = sanitizeTargets(selection?.targets);
+
+    return { bbox, targets };
+  });
+}
+
+function randomRunId() {
+  const ts = Date.now();
+  const rand = Math.floor(Math.random() * 100000);
+  return `run-${ts}-${rand}`;
 }
 
 function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
@@ -175,20 +210,133 @@ function spawnCodexEdit({ prompt, imagePath, model, cwd, onLog }) {
   });
 }
 
-function randomRunId() {
-  const ts = Date.now();
-  const rand = Math.floor(Math.random() * 100000);
-  return `run-${ts}-${rand}`;
+function createRunStore() {
+  const activeRunsBySlide = new Map();
+  const runStore = new Map();
+  const runOrder = [];
+
+  function toRunSummary(run) {
+    return {
+      runId: run.runId,
+      slide: run.slide,
+      status: run.status,
+      code: run.code,
+      message: run.message,
+      startedAt: run.startedAt,
+      finishedAt: run.finishedAt,
+      prompt: run.prompt,
+      selectionsCount: run.selectionsCount,
+      logSize: run.log.length,
+      logPreview: run.log.slice(-2000),
+    };
+  }
+
+  return {
+    hasActiveRunForSlide(slide) {
+      return activeRunsBySlide.has(slide);
+    },
+
+    getActiveRunId(slide) {
+      return activeRunsBySlide.get(slide) ?? null;
+    },
+
+    startRun({ runId, slide, prompt, selectionsCount }) {
+      activeRunsBySlide.set(slide, runId);
+
+      const run = {
+        runId,
+        slide,
+        status: 'running',
+        code: null,
+        message: 'Running',
+        prompt,
+        selectionsCount,
+        startedAt: new Date().toISOString(),
+        finishedAt: null,
+        log: '',
+      };
+
+      runStore.set(runId, run);
+      runOrder.push(runId);
+
+      while (runOrder.length > MAX_RUNS) {
+        const oldestRunId = runOrder.shift();
+        if (!oldestRunId) continue;
+        runStore.delete(oldestRunId);
+      }
+
+      return toRunSummary(run);
+    },
+
+    appendLog(runId, chunk) {
+      const run = runStore.get(runId);
+      if (!run) return;
+
+      run.log += chunk;
+      if (run.log.length > MAX_LOG_CHARS) {
+        run.log = run.log.slice(run.log.length - MAX_LOG_CHARS);
+      }
+    },
+
+    finishRun(runId, { status, code, message }) {
+      const run = runStore.get(runId);
+      if (!run) return null;
+
+      run.status = status;
+      run.code = code;
+      run.message = message;
+      run.finishedAt = new Date().toISOString();
+
+      if (activeRunsBySlide.get(run.slide) === runId) {
+        activeRunsBySlide.delete(run.slide);
+      }
+
+      return toRunSummary(run);
+    },
+
+    clearActiveRun(slide, runId) {
+      if (activeRunsBySlide.get(slide) === runId) {
+        activeRunsBySlide.delete(slide);
+      }
+    },
+
+    listRuns(limit = 60) {
+      return runOrder
+        .slice(Math.max(0, runOrder.length - limit))
+        .reverse()
+        .map((runId) => runStore.get(runId))
+        .filter(Boolean)
+        .map((run) => toRunSummary(run));
+    },
+
+    getRunLog(runId) {
+      const run = runStore.get(runId);
+      if (!run) return null;
+      return run.log;
+    },
+
+    listActiveRuns() {
+      return Array.from(activeRunsBySlide.entries()).map(([slide, runId]) => ({ slide, runId }));
+    },
+  };
 }
 
 async function startServer(opts) {
   await loadDeps();
 
+  const runStore = createRunStore();
+
   const app = express();
-  app.use(express.json({ limit: '2mb' }));
+  app.use(express.json({ limit: '5mb' }));
 
   const editorHtmlPath = join(PACKAGE_ROOT, 'src', 'editor', 'editor.html');
-  let activeApplyRunId = null;
+
+  function broadcastRunsSnapshot() {
+    broadcastSSE('runsSnapshot', {
+      runs: runStore.listRuns(),
+      activeRuns: runStore.listActiveRuns(),
+    });
+  }
 
   app.get('/', async (_req, res) => {
     try {
@@ -223,6 +371,22 @@ async function startServer(opts) {
     }
   });
 
+  app.get('/api/runs', (_req, res) => {
+    res.json({
+      runs: runStore.listRuns(100),
+      activeRuns: runStore.listActiveRuns(),
+    });
+  });
+
+  app.get('/api/runs/:runId/log', (req, res) => {
+    const log = runStore.getRunLog(req.params.runId);
+    if (log === null) {
+      return res.status(404).send('Run not found');
+    }
+
+    res.type('text/plain').send(log);
+  });
+
   app.get('/api/events', (req, res) => {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -233,16 +397,16 @@ async function startServer(opts) {
 
     sseClients.add(res);
     req.on('close', () => sseClients.delete(res));
+
+    const snapshotPayload = {
+      runs: runStore.listRuns(),
+      activeRuns: runStore.listActiveRuns(),
+    };
+    res.write(`event: runsSnapshot\ndata: ${JSON.stringify(snapshotPayload)}\n\n`);
   });
 
   app.post('/api/apply', async (req, res) => {
-    const { slide, prompt, selection, targets } = req.body ?? {};
-
-    if (activeApplyRunId) {
-      return res.status(409).json({
-        error: `Another edit is already running (${activeApplyRunId}).`,
-      });
-    }
+    const { slide, prompt, selections } = req.body ?? {};
 
     if (!slide || typeof slide !== 'string' || !SLIDE_FILE_PATTERN.test(slide)) {
       return res.status(400).json({ error: 'Missing or invalid `slide`.' });
@@ -252,52 +416,66 @@ async function startServer(opts) {
       return res.status(400).json({ error: 'Missing or invalid `prompt`.' });
     }
 
-    let normalizedSelection;
+    if (runStore.hasActiveRunForSlide(slide)) {
+      return res.status(409).json({
+        error: `Slide ${slide} already has an active run.`,
+        runId: runStore.getActiveRunId(slide),
+      });
+    }
+
+    let normalizedSelections;
     try {
-      normalizedSelection = normalizeSelection(selection, SLIDE_SIZE);
+      normalizedSelections = normalizeSelections(selections);
     } catch (error) {
       return res.status(400).json({ error: error.message });
     }
 
     const runId = randomRunId();
-    activeApplyRunId = runId;
 
-    const cleanTargets = sanitizeTargets(targets);
-    const tmpPath = await mkdtemp(join(tmpdir(), 'editor-codex-'));
-    const screenshotPath = join(tmpPath, 'slide.png');
-    const annotatedPath = join(tmpPath, 'slide-annotated.png');
+    const runSummary = runStore.startRun({
+      runId,
+      slide,
+      prompt: prompt.trim(),
+      selectionsCount: normalizedSelections.length,
+    });
 
     broadcastSSE('applyStarted', {
       runId,
       slide,
-      selection: normalizedSelection,
-      targetsCount: cleanTargets.length,
+      selectionsCount: normalizedSelections.length,
+      selectionBoxes: normalizedSelections.map((selection) => selection.bbox),
     });
+    broadcastRunsSnapshot();
+
+    const tmpPath = await mkdtemp(join(tmpdir(), 'editor-codex-'));
+    const screenshotPath = join(tmpPath, 'slide.png');
+    const annotatedPath = join(tmpPath, 'slide-annotated.png');
 
     try {
-      const { page } = await getScreenshotPage();
+      await withScreenshotPage(async (page) => {
+        await screenshotMod.captureSlideScreenshot(
+          page,
+          slide,
+          screenshotPath,
+          `http://localhost:${opts.port}/slides`,
+          { useHttp: true },
+        );
+      });
 
-      await screenshotMod.captureSlideScreenshot(
-        page,
-        slide,
-        screenshotPath,
-        `http://localhost:${opts.port}/slides`,
-        { useHttp: true },
+      const scaledBoxes = normalizedSelections.map((selection) =>
+        scaleSelectionToScreenshot(
+          selection.bbox,
+          SLIDE_SIZE,
+          screenshotMod.SCREENSHOT_SIZE,
+        ),
       );
 
-      const screenshotSelection = scaleSelectionToScreenshot(
-        normalizedSelection,
-        SLIDE_SIZE,
-        screenshotMod.SCREENSHOT_SIZE,
-      );
-
-      await writeAnnotatedScreenshot(screenshotPath, annotatedPath, screenshotSelection);
+      await writeAnnotatedScreenshot(screenshotPath, annotatedPath, scaledBoxes);
 
       const codexPrompt = buildCodexEditPrompt({
         slideFile: slide,
         userPrompt: prompt,
-        selection: normalizedSelection,
-        targets: cleanTargets,
+        selections: normalizedSelections,
       });
 
       const result = await spawnCodexEdit({
@@ -306,7 +484,8 @@ async function startServer(opts) {
         model: opts.codexModel,
         cwd: process.cwd(),
         onLog: (stream, chunk) => {
-          broadcastSSE('applyLog', { runId, stream, chunk });
+          runStore.appendLog(runId, chunk);
+          broadcastSSE('applyLog', { runId, slide, stream, chunk });
         },
       });
 
@@ -315,6 +494,12 @@ async function startServer(opts) {
         ? 'Codex edit completed.'
         : `Codex exited with code ${result.code}.`;
 
+      runStore.finishRun(runId, {
+        status: success ? 'success' : 'failed',
+        code: result.code,
+        message,
+      });
+
       broadcastSSE('applyFinished', {
         runId,
         slide,
@@ -322,8 +507,10 @@ async function startServer(opts) {
         code: result.code,
         message,
       });
+      broadcastRunsSnapshot();
 
       res.json({
+        ...runSummary,
         success,
         runId,
         code: result.code,
@@ -332,6 +519,12 @@ async function startServer(opts) {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
+      runStore.finishRun(runId, {
+        status: 'failed',
+        code: -1,
+        message,
+      });
+
       broadcastSSE('applyFinished', {
         runId,
         slide,
@@ -339,6 +532,7 @@ async function startServer(opts) {
         code: -1,
         message,
       });
+      broadcastRunsSnapshot();
 
       res.status(500).json({
         success: false,
@@ -346,7 +540,7 @@ async function startServer(opts) {
         error: message,
       });
     } finally {
-      activeApplyRunId = null;
+      runStore.clearActiveRun(slide, runId);
       await rm(tmpPath, { recursive: true, force: true }).catch(() => {});
     }
   });
