@@ -4,7 +4,8 @@
  * build-viewer.js
  *
  * Builds a single viewer.html from slide-*.html files in selected --slides-dir.
- * Works with file:// protocol — all slides are inlined into one HTML.
+ * Works with file:// protocol — each slide is embedded via <iframe srcdoc="...">
+ * for perfect CSS isolation (no regex scoping needed).
  */
 
 import { readFileSync, writeFileSync, readdirSync } from 'fs';
@@ -108,97 +109,19 @@ if (slideFiles.length === 0) {
 console.log(`Found ${slideFiles.length} slides`);
 
 /**
- * HTML에서 <style> 블록 내용을 추출
+ * Escape HTML for safe embedding inside srcdoc="..." attribute.
+ * Must escape &, ", < so the srcdoc attribute value is valid.
  */
-function extractStyleContent(html) {
-  const match = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-  return match ? match[1] : '';
+function escapeForSrcdoc(html) {
+  return html
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
 }
 
-/**
- * <body> 태그의 inline style 속성을 추출
- */
-function extractBodyInlineStyle(html) {
-  const match = html.match(/<body\s+style="([^"]*)"/i);
-  return match ? match[1] : '';
-}
-
-/**
- * CSS body {} 규칙에서 스타일 프로퍼티를 추출하여 inline style 문자열로 변환
- */
-function extractBodyCssStyle(css) {
-  const match = css.match(/body\s*\{([^}]*)\}/i);
-  if (!match) return '';
-  // CSS 프로퍼티들을 inline style 문자열로 변환
-  return match[1]
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0)
-    .join('; ') + ';';
-}
-
-/**
- * <body> 태그의 innerHTML을 추출
- */
-function extractBodyInner(html) {
-  const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  return match ? match[1] : '';
-}
-
-/**
- * body style에서 width/height/font-family 제거 (뷰어 프레임에서 통일)
- */
-function removeSlideSize(style) {
-  return style
-    .replace(/\s*width:\s*720pt;?\s*/gi, ' ')
-    .replace(/\s*height:\s*405pt;?\s*/gi, ' ')
-    .replace(/\s*font-family:\s*[^;]+;?\s*/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/**
- * <style> 블록에서 body {} 규칙 제거, * {} 리셋을 슬라이드별로 스코핑
- */
-function scopeStyles(css, slideIndex) {
-  const selector = `.slide-frame[data-slide="${slideIndex}"]`;
-  let scoped = '';
-
-  // body {} 규칙 제거
-  css = css.replace(/body\s*\{[^}]*\}/gi, '');
-
-  // * { ... } 리셋을 스코핑
-  css = css.replace(/\*\s*\{([^}]*)\}/gi, (match, rules) => {
-    scoped += `${selector} * {${rules}}\n`;
-    return '';
-  });
-
-  // 나머지 CSS가 있으면 스코핑
-  const remaining = css.trim();
-  if (remaining) {
-    scoped += remaining
-      .replace(/([^\s{]+)\s*\{/g, (match, sel) => `${selector} ${sel.trim()} {`);
-  }
-
-  return scoped;
-}
-
-// 슬라이드 데이터 추출
-const slides = slideFiles.map((file, i) => {
+// 슬라이드 HTML 읽기
+const slides = slideFiles.map((file) => {
   const html = readFileSync(join(SLIDES_DIR, file), 'utf-8');
-  const styleContent = extractStyleContent(html);
-
-  // body 스타일: CSS body {} 규칙 + inline style 속성 합산
-  const cssBodyStyle = extractBodyCssStyle(styleContent);
-  const inlineBodyStyle = extractBodyInlineStyle(html);
-  const combinedBodyStyle = removeSlideSize(
-    [cssBodyStyle, inlineBodyStyle].filter(Boolean).join(' ')
-  );
-
-  const bodyInner = extractBodyInner(html);
-  const scopedCss = scopeStyles(styleContent, i + 1);
-
-  return { file, bodyStyle: combinedBodyStyle, bodyInner, scopedCss };
+  return { file, html };
 });
 
 // 뷰어 HTML 생성
@@ -208,9 +131,7 @@ const viewerHtml = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slide Viewer</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <style>
-    /* === Viewer Chrome === */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     html, body {
@@ -218,7 +139,7 @@ const viewerHtml = `<!DOCTYPE html>
       height: 100%;
       overflow: hidden;
       background: #111;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .viewer-container {
@@ -296,13 +217,13 @@ const viewerHtml = `<!DOCTYPE html>
       transform-origin: center center;
     }
 
-    /* Slide frames */
+    /* Slide frames (iframes) */
     .slide-frame {
       position: absolute;
       inset: 0;
       width: 720pt;
       height: 405pt;
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      border: none;
       overflow: hidden;
       opacity: 0;
       pointer-events: none;
@@ -313,27 +234,22 @@ const viewerHtml = `<!DOCTYPE html>
       opacity: 1;
       pointer-events: auto;
     }
-
-    /* === Scoped Slide Styles === */
-${slides.map(s => s.scopedCss).join('\n')}
   </style>
 </head>
 <body>
   <div class="viewer-container">
     <!-- Navigation -->
     <div class="nav-bar">
-      <button id="btn-prev" title="Previous (←)">Prev</button>
+      <button id="btn-prev" title="Previous (\\u2190)">Prev</button>
       <span class="slide-counter" id="counter">1 / ${slides.length}</span>
-      <button id="btn-next" title="Next (→)">Next</button>
+      <button id="btn-next" title="Next (\\u2192)">Next</button>
       <button class="btn-fullscreen" id="btn-fs" title="Fullscreen (F)">&#x26F6;</button>
     </div>
 
     <!-- Slide viewport -->
     <div class="slide-viewport" id="viewport">
       <div class="slide-scaler" id="scaler">
-${slides.map((s, i) => `        <div class="slide-frame${i === 0 ? ' active' : ''}" data-slide="${i + 1}" style="${s.bodyStyle}">
-${s.bodyInner}
-        </div>`).join('\n')}
+${slides.map((s, i) => `        <iframe class="slide-frame${i === 0 ? ' active' : ''}" data-slide="${i + 1}" srcdoc="${escapeForSrcdoc(s.html)}" sandbox="allow-same-origin"></iframe>`).join('\n')}
       </div>
     </div>
   </div>
@@ -393,7 +309,6 @@ ${s.bodyInner}
     function rescale() {
       const vw = viewport.clientWidth;
       const vh = viewport.clientHeight;
-      // 720pt ≈ 960px, 405pt ≈ 540px at 96dpi (but pt in CSS = 1.333px)
       const slideW = scaler.offsetWidth;
       const slideH = scaler.offsetHeight;
       const scale = Math.min(vw / slideW, vh / slideH) * 0.95;

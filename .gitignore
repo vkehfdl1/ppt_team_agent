@@ -45,5 +45,7 @@ ENV/
 
 # Generated slides and viewer
 slides/
+decks/
 *.pptx
 
+slides.pdf
