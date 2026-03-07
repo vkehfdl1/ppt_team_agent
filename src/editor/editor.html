@@ -51,15 +51,15 @@
     }
 
     .nav-bar {
-      height: 48px;
-      background: var(--panel-2);
-      border-bottom: 1px solid var(--border);
+      height: 44px;
+      background: #08090b;
+      border-bottom: 1px solid #171a20;
       display: flex;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 14px;
       flex-shrink: 0;
       z-index: 100;
-      gap: 10px;
+      gap: 12px;
     }
 
     .nav-controls {
@@ -69,20 +69,21 @@
     }
 
     .nav-bar button {
-      background: var(--panel);
+      height: 30px;
+      background: #111318;
       color: var(--text-0);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 6px 12px;
+      border: 1px solid #1b2028;
+      border-radius: 999px;
+      padding: 0 12px;
       font-size: 12px;
       font-family: inherit;
       cursor: pointer;
       transition: all var(--transition);
     }
 
-    .nav-bar button:hover { background: var(--border); }
+    .nav-bar button:hover { background: #171b22; border-color: #252b35; }
     .nav-bar button:disabled { opacity: 0.3; cursor: default; }
-    .nav-bar button:disabled:hover { background: var(--panel); }
+    .nav-bar button:disabled:hover { background: #111318; border-color: #1b2028; }
 
     .slide-counter {
       color: var(--text-1);
@@ -150,8 +151,8 @@
       display: flex;
       min-width: 0;
       overflow: hidden;
-      padding: 12px;
-      background: var(--bg-0);
+      padding: 24px 28px;
+      background: #050607;
     }
 
     .slide-toolbox {
@@ -179,6 +180,20 @@
       justify-content: center;
       overflow: hidden;
       position: relative;
+      padding: 12px;
+    }
+
+    .stage-shell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      border: 1px solid #17191e;
+      border-radius: 20px;
+      background: #0b0d10;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.32);
+      max-width: 100%;
+      max-height: 100%;
     }
 
     .tool-mode-group,
@@ -452,8 +467,8 @@
     .slide-wrapper iframe {
       width: 960px;
       height: 540px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      border: 1px solid #20252d;
+      border-radius: 10px;
       background: #fff;
       display: block;
       position: relative;
@@ -1211,12 +1226,12 @@
     }
 
     .status-bar {
-      height: 28px;
-      background: var(--panel-2);
-      border-top: 1px solid var(--border);
+      min-height: 32px;
+      background: #08090b;
+      border-top: 1px solid #15181d;
       display: flex;
       align-items: center;
-      padding: 0 12px;
+      padding: 0 14px;
       font-size: 11px;
       color: var(--text-2);
       flex-shrink: 0;
@@ -1579,16 +1594,18 @@
     <div class="main-content">
       <div class="slide-panel" id="slide-panel">
         <div class="slide-stage" id="slide-stage">
-          <div class="slide-wrapper" id="slide-wrapper">
-            <button class="clear-overlay-btn" id="btn-clear-bboxes" title="Clear all boxes on current slide">Clear Boxes</button>
-            <iframe id="slide-iframe" sandbox="allow-same-origin allow-scripts" loading="eager"></iframe>
-            <div class="bbox-layer" id="bbox-layer"></div>
-            <div class="object-layer" id="object-layer">
-              <div class="object-outline hover" id="object-hover-box"></div>
-              <div class="object-outline selected" id="object-selected-box"></div>
-            </div>
-            <div class="draw-layer" id="draw-layer">
-              <div class="draw-box" id="draw-box"></div>
+          <div class="stage-shell" id="stage-shell">
+            <div class="slide-wrapper" id="slide-wrapper">
+              <button class="clear-overlay-btn" id="btn-clear-bboxes" title="Clear all boxes on current slide">Clear Boxes</button>
+              <iframe id="slide-iframe" sandbox="allow-same-origin allow-scripts" loading="eager"></iframe>
+              <div class="bbox-layer" id="bbox-layer"></div>
+              <div class="object-layer" id="object-layer">
+                <div class="object-outline hover" id="object-hover-box"></div>
+                <div class="object-outline selected" id="object-selected-box"></div>
+              </div>
+              <div class="draw-layer" id="draw-layer">
+                <div class="draw-box" id="draw-box"></div>
+              </div>
             </div>
           </div>
         </div>

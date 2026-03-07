@@ -482,16 +482,24 @@ test('keeps the persistent inspector beside the slide in a 16:9 viewport', { con
     const page = await browser.newPage({ viewport: { width: 1496, height: 768 } });
     await page.goto(`http://localhost:${port}/`, { waitUntil: 'domcontentloaded' });
 
+    await page.waitForSelector('#stage-shell');
     await page.waitForSelector('#editor-sidebar');
     await page.waitForSelector('#slide-wrapper');
     await page.waitForTimeout(500);
 
+    const navHeight = await page.$eval('.nav-bar', (el) => parseFloat(getComputedStyle(el).height));
+    const statusHeight = await page.$eval('.status-bar', (el) => parseFloat(getComputedStyle(el).height));
+    const stageShellBox = await page.locator('#stage-shell').boundingBox();
     assert.equal(await page.locator('#editor-sidebar').count(), 1, 'persistent editor sidebar should be present');
     const sidebarBox = await page.locator('#editor-sidebar').boundingBox();
     const wrapperBox = await page.locator('#slide-wrapper').boundingBox();
+    assert.ok(stageShellBox, 'stage shell not found');
     assert.ok(sidebarBox, 'editor sidebar not found');
     assert.ok(wrapperBox, 'slide wrapper not found');
+    assert.ok(stageShellBox.width > wrapperBox.width, 'stage shell should frame the slide');
     assert.ok(sidebarBox.x >= wrapperBox.x + (wrapperBox.width * 0.9), 'sidebar should stay to the right of the slide frame');
+    assert.ok(navHeight <= 48, `nav should stay compact, got ${navHeight}`);
+    assert.ok(statusHeight <= 36, `status bar should stay compact, got ${statusHeight}`);
 
     await page.click('#tool-mode-select');
     await page.waitForFunction(() => {
